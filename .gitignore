@@ -1,0 +1,6 @@
+*.swp
+*.swo
+doc/*
+.yardoc
+.DS_Store
+endlist.yml

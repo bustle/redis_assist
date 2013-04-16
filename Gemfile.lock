@@ -1,0 +1,41 @@
+PATH
+  remote: .
+  specs:
+    redis_assist (0.1.0)
+      base62 (~> 0.1.4)
+      hiredis (~> 0.4.5)
+      redis (~> 3.0.1)
+      uuid (~> 2.3.6)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    base62 (0.1.4)
+    diff-lcs (1.1.3)
+    hiredis (0.4.5)
+    macaddr (1.6.1)
+      systemu (~> 2.5.0)
+    rake (0.9.6)
+    redis (3.0.3)
+    rspec (2.12.0)
+      rspec-core (~> 2.12.0)
+      rspec-expectations (~> 2.12.0)
+      rspec-mocks (~> 2.12.0)
+    rspec-core (2.12.2)
+    rspec-expectations (2.12.1)
+      diff-lcs (~> 1.1.3)
+    rspec-mocks (2.12.1)
+    systemu (2.5.2)
+    uuid (2.3.7)
+      macaddr (~> 1.0)
+    yard (0.8.6.1)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  bundler (~> 1.0)
+  rake (~> 0.9)
+  redis_assist!
+  rspec (~> 2.3)
+  yard (~> 0.8.6.1)
