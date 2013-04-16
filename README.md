@@ -1,6 +1,8 @@
 RedisAssist - Easy Redis Backed Object Modeling
 ==============================================
 
+### Documentation: http://docs.redisassist.com
+
 RedisAssist is a Persistant Object Model backed by Redis for Ruby.
 
 Store and Fetch data of any type in Redis with as little friction as possible. RedisAssist lets you back simple or complex Object Models with Redis while giving you a convenient interface interact with it.
