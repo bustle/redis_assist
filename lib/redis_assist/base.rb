@@ -241,7 +241,7 @@ module RedisAssist
       invoke_callback(:before_save)
   
       # Assing the record with the next available ID
-      self.id = generate_id
+      self.id = generate_id if new_record?
 
       redis.multi do
         # build the arguments to pass to redis hmset

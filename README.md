@@ -1,13 +1,20 @@
 RedisAssist - Easy Redis Backed Object Modeling
 ==============================================
 
-### Documentation: http://docs.redisassist.com
+Documentation: http://docs.redisassist.com
 
 RedisAssist is a Persistant Object Model backed by Redis for Ruby.
 
 Store and Fetch data of any type in Redis with as little friction as possible. RedisAssist lets you back simple or complex Object Models with Redis while giving you a convenient interface interact with it.
 
+
 ## Getting Started
+In your Gemfile:
+
+    gem "redis_assist"
+
+Create a model:
+
     class Person < RedisAssist::Base
       attr_persist :name
       attr_persist :birthday,     as: :time
@@ -27,19 +34,23 @@ Store and Fetch data of any type in Redis with as little friction as possible. R
     person.save         # => #<Person:0x007f88341662a0 @attributes={:name=>"Albert Hoffman", :birthday=>-1993402800.0, :meta_info=>"{\"profession\":\"Scientist\"}"}
     person.new_record?  # => false
 
+
 ## Creating
     person = Person.new(name: 'Albert Hoffman', birthday: Time.parse('1/11/1906'), meta_info: { profession: 'Scientist' })
+
 
 ## Validating
     person = Person.new(name: 'Albert Einstein', birthday: Time.parse('1/11/1906'), meta_info: { profession: 'Scientist' })
     persin.valid?       # => false
     persin.errors       # => [{name: "Albert Einstein is dead."}]
 
+
 ## Fetching
     person = Person.Find(1)
 
     # When passing an array of ids, RedisAssist will load everything using a single pipeline
     people = Person.find([1, 2])
+
 
 ## Deleting
 Deletes all the persisted attributes from redis.
@@ -54,6 +65,7 @@ Deletes all the persisted attributes from redis.
 You can fetch soft deleted records by setting a `deleted` property when calling `#find`
 
     Person.find(1, deleted: true)
+
 
 ## Transforms
 Since Redis only supports string values RedisAssist provides an interface for serialization in and out of Redis.
@@ -86,8 +98,10 @@ To use the MessagePackTransform we just defined
 
     attr_persist :really_long_biography, as: :message_pack      
 
+
 ## Requirements
     redis-rb
+
 
 ## Configuration
 You can configure RedisAssist with your own redis client
