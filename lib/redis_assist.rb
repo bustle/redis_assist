@@ -6,6 +6,7 @@ require 'uuid'
 require 'json'
 require 'redis_assist/config'
 require 'redis_assist/transform'
+require 'redis_assist/callbacks'
 require 'redis_assist/base'
 
 # == Setup & Configuration

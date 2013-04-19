@@ -1,5 +1,8 @@
 module RedisAssist
   class Base
+
+    include Callbacks
+
     class << self
 
       def attr_persist(name, opts={})
@@ -351,11 +354,6 @@ module RedisAssist
   
     private
   
-  
-    def invoke_callback(callback)
-      send("_#{callback}")
-      send(callback) if respond_to? callback
-    end
   
     def generate_id
       redis.incr("#{self.class.key_prefix}:id_sequence")
