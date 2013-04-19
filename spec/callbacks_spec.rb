@@ -14,6 +14,10 @@ class Callsback
   after_delete       :callback, :callback2
   after_update       :callback, :callback2
 
+  after_save do |record|
+    record
+  end
+
   def invoke_callbacks
     invoke_callback :on_load
     invoke_callback :before_validation
@@ -38,6 +42,7 @@ class Callsback
   end
 end
 
+# TODO: more than just a sanity test
 describe Callsback do
   let(:callsback) { Callsback.new }
   subject         { callsback }

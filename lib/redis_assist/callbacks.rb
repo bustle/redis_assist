@@ -7,7 +7,8 @@ module RedisAssist
     end
     
     def invoke_callback(callback_type)
-      self.class.callbacks[callback_type].each do |callback_proc|
+      receivers = self.class.callbacks[callback_type] || []
+      receivers.each do |callback_proc|
         callback_proc.call(self) 
       end
     end

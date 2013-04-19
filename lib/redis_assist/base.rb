@@ -2,7 +2,12 @@ module RedisAssist
   class Base
 
     include Callbacks
-
+  
+    before_create {|instance| instance.created_at = Time.now.to_f if instance.respond_to?(:created_at) }
+    before_update {|instance| instance.updated_at = Time.now.to_f if instance.respond_to?(:updated_at) }
+    after_delete  {|instance| instance.deleted_at = Time.now.to_f if instance.respond_to?(:deleted_at) }
+    after_create  {|instance| instance.new_record = false }
+ 
     class << self
 
       def attr_persist(name, opts={})
@@ -319,39 +324,14 @@ module RedisAssist
       errors << { field => message }
     end
   
+
     protected 
   
   
-    attr_writer :id, :errors
+    attr_writer   :id, :errors
     attr_accessor :lists, :hashes, :new_record
-  
-    def _on_load; end
-  
-    def _before_validation
-      self.errors = []
-    end
-  
-    def _before_create
-      self.created_at = Time.now.to_f if respond_to?(:created_at)
-    end
  
-    def _before_update
-      self.updated_at = Time.now.to_f if respond_to?(:updated_at)
-    end
- 
-    def _after_delete
-      self.deleted_at = Time.now.to_f if respond_to?(:deleted_at)
-    end
 
-    def _after_create
-      self.new_record = false
-    end
-  
-    def _before_save; end
-    def _after_save; end
-    def _after_update; end
-  
-  
     private
   
   

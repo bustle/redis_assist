@@ -31,7 +31,7 @@ Create a model:
     person = Person.new(name: 'Albert Hoffman', birthday: Time.parse('1/11/1906'), meta_info: { profession: 'Scientist' })
     person.new_record?  # => true
     person.name         # => "Albert Hoffman"
-    person.save         # => #<Person:0x007f88341662a0 @attributes={:name=>"Albert Hoffman", :birthday=>-1993402800.0, :meta_info=>"{\"profession\":\"Scientist\"}"}
+    person.save         # => #<Person:0x007f88341662a0>
     person.new_record?  # => false
 
 
@@ -67,6 +67,29 @@ You can fetch soft deleted records by setting a `deleted` property when calling 
     Person.find(1, deleted: true)
 
 
+## Callbacks
+RedisAssist supports callbacks through a Rails like interface.
+
+    before_save :titleize_blog_title
+    after_create :send_to_real_time_sphinx_index
+    after_update :update_in_realtime_sphinx_index
+
+    after_delete do |record|
+      record.cleanup!
+    end
+
+    def titleize_blog_title 
+      blog_title.titleize!
+    end
+
+    def send_to_realtime_sphinx_index
+      ...
+    end
+
+    def update_in_realtime_sphinx_index
+      ...
+    end
+
 ## Transforms
 Since Redis only supports string values RedisAssist provides an interface for serialization in and out of Redis.
 
@@ -88,8 +111,7 @@ RedisAssist also provides an elegant API for defining custom transforms.
       def self.to(val)
         val.to_msgpack
       end
-    
-      def self.from(val)
+    def self.from(val)
         MessagePack.unpack(val) 
       end
     end
