@@ -2,6 +2,7 @@ module RedisAssist
   class Base
 
     include Callbacks
+    include Validations
   
     before_create {|instance| instance.created_at = Time.now.to_f if instance.respond_to?(:created_at) }
     before_update {|instance| instance.updated_at = Time.now.to_f if instance.respond_to?(:updated_at) }
@@ -52,6 +53,8 @@ module RedisAssist
         redis.exists(key_for(id, :attributes))      
       end
 
+      # TODO: needs a refactor. Should this be an interface for skipping validations?
+      # Should we optimize and skip the find? Support an array of ids?
       def update(id, params={})
         record = find(id)
         return false unless record
@@ -210,13 +213,12 @@ module RedisAssist
     end
   
     attr_accessor :attributes
-    attr_reader :id, :errors
+    attr_reader :id
   
     def initialize(attrs={})
       @attributes = {}
       self.lists  = {}
       self.hashes = {}
-      self.errors = []
   
       if attrs[:id]
         self.id = attrs[:id]
@@ -242,7 +244,7 @@ module RedisAssist
     end
   
     def save
-      return false  unless valid? 
+      return false unless valid? 
   
       invoke_callback(:before_update) unless new_record?
       invoke_callback(:before_create) if new_record?
@@ -283,11 +285,8 @@ module RedisAssist
   
     def valid?
       invoke_callback(:before_validation)
-      validate
-      errors.empty?
+      super
     end
-  
-    def validate; end
   
     # TODO: should this be a redis-assist feature?
     def deleted?
@@ -319,16 +318,13 @@ module RedisAssist
     def redis
       self.class.redis
     end
-  
-    def add_error(field, message)
-      errors << { field => message }
-    end
+ 
   
 
     protected 
   
   
-    attr_writer   :id, :errors
+    attr_writer   :id
     attr_accessor :lists, :hashes, :new_record
  
 

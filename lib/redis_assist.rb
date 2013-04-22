@@ -7,6 +7,7 @@ require 'json'
 require 'redis_assist/config'
 require 'redis_assist/transform'
 require 'redis_assist/callbacks'
+require 'redis_assist/validations'
 require 'redis_assist/base'
 
 # == Setup & Configuration
@@ -26,5 +27,4 @@ module RedisAssist
 end
 
 # require all transforms
-Dir["#{File.dirname(__FILE__)}/redis_assist/transforms/*.rb"].each {|file| require file }
-
+Dir["#{File.dirname(__FILE__)}/redis_assist/transforms/*.rb"].each{|file| require file }
