@@ -3,7 +3,7 @@ module RedisAssist
     class << self
       def redis_client
         return @redis_client if @redis_client
-        redis_config      = { :host => '127.0.0.1', :driver => :hiredis } 
+        redis_config      = { :host => '127.0.0.1' } 
         self.redis_client = Redis.new(redis_config) 
       end
 

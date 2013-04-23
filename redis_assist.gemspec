@@ -15,10 +15,8 @@ Gem::Specification.new do |s|
 
   s.rubyforge_project         = "redis_assist"
 
-  s.add_dependency('redis', "~> 3.0.1")
-  s.add_dependency('hiredis', "~> 0.4.5")
-  s.add_dependency('uuid', "~> 2.3.6")
-  s.add_dependency('base62', "~> 0.1.4")
+  s.add_dependency('redis', "~> 3.0.3")
+  s.add_dependency('inflections', "~> 3.2.12.20130314")
   s.add_development_dependency 'bundler', '~> 1.0'
   s.add_development_dependency 'rake', '~> 0.9'
   s.add_development_dependency 'yard', '~> 0.8.6.1'

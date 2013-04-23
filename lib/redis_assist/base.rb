@@ -3,11 +3,14 @@ module RedisAssist
 
     include Callbacks
     include Validations
+    include Associations
   
-    before_create {|instance| instance.created_at = Time.now.to_f if instance.respond_to?(:created_at) }
-    before_update {|instance| instance.updated_at = Time.now.to_f if instance.respond_to?(:updated_at) }
-    after_delete  {|instance| instance.deleted_at = Time.now.to_f if instance.respond_to?(:deleted_at) }
-    after_create  {|instance| instance.new_record = false }
+    def self.inherited(base)
+      base.before_create {|record| record.send(:created_at=, Time.now.to_f) if record.respond_to?(:created_at) }
+      base.before_update {|record| record.send(:updated_at=, Time.now.to_f) if record.respond_to?(:updated_at) }
+      base.after_delete  {|record| record.send(:deleted_at=, Time.now.to_f) if record.respond_to?(:deleted_at) }
+      base.after_create  {|record| record.send(:new_record=, false) }
+    end
  
     class << self
 
@@ -19,7 +22,7 @@ module RedisAssist
         elsif opts[:as].eql?(:hash)
           define_hash(name)
         else
-          define_field(name)
+          define_attribute(name)
         end
       end
 
@@ -201,7 +204,7 @@ module RedisAssist
         end
       end
 
-      def define_field(name)
+      def define_attribute(name)
         define_method(name) do 
           self.class.transform(:from, name, attributes[name])
         end
@@ -216,9 +219,9 @@ module RedisAssist
     attr_reader :id
   
     def initialize(attrs={})
-      @attributes = {}
-      self.lists  = {}
-      self.hashes = {}
+      self.attributes = {}
+      self.lists      = {}
+      self.hashes     = {}
   
       if attrs[:id]
         self.id = attrs[:id]
@@ -236,7 +239,7 @@ module RedisAssist
         attrs.delete(name)
       end
   
-      raise "RedisAssist: #{self.class.name} does not support fields: #{attrs.keys.join(', ')}" if attrs.length > 0
+      raise "RedisAssist: #{self.class.name} does not support attributes: #{attrs.keys.join(', ')}" if attrs.length > 0
     end
   
     def saved?
@@ -255,7 +258,7 @@ module RedisAssist
 
       redis.multi do
         # build the arguments to pass to redis hmset
-        # and insure the fields are explicitely declared
+        # and insure the attributes are explicitely declared
         attribute_args = hash_to_redis(attributes)
  
         redis.hmset(key_for(:attributes), *attribute_args)

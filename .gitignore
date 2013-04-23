@@ -1,5 +1,6 @@
 *.swp
 *.swo
+*.un~
 doc/*
 .yardoc
 .DS_Store
