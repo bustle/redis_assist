@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    redis_assist (0.4.0)
+    redis_assist (0.4.1)
       inflections (~> 3.2.12.20130314)
       redis (~> 3.0.3)
 
@@ -17,7 +17,7 @@ GEM
       activesupport (~> 3.2.0)
     multi_json (1.7.2)
     rake (0.9.6)
-    redis (3.0.3)
+    redis (3.0.4)
     rspec (2.12.0)
       rspec-core (~> 2.12.0)
       rspec-expectations (~> 2.12.0)
