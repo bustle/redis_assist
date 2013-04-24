@@ -36,8 +36,15 @@ Create a model:
 
 
 ## Creating
-    person = Person.new(name: 'Albert Hoffman', birthday: Time.parse('1/11/1906'), meta_info: { profession: 'Scientist' })
+    person = Person.create(name: 'Albert Hoffman', birthday: Time.parse('1/11/1906'), meta_info: { profession: 'Scientist' })
 
+## Updating
+    person = Person.find(1)
+    person.name = 'Hubble Love'
+    person.save
+
+Currently experimental updating API. API may change to support bulk updates within a single pipeline and the ability to skip callbacks and validations.
+    Person.update(1, name: 'Tyler Love')
 
 ## Validating
     person = Person.new(name: 'Albert Einstein', birthday: Time.parse('1/11/1906'), meta_info: { profession: 'Scientist' })
@@ -89,6 +96,30 @@ RedisAssist supports callbacks through a Rails like interface.
     def update_in_realtime_sphinx_index
       ...
     end
+
+## Relationships
+Experimental support for has_many and belongs_to relationships.
+
+    class Person < RedisAssist::Base
+      attr_persist  :name
+      has_many      :pets
+    end
+            
+    class Pet < RedisAssist::Base
+      attr_persist  :name
+      belongs_to    :person
+    end
+
+    person = Person.create(name: 'Tyler Love')
+    person.add_pet Pet.new('Hubble Love')
+    person.add_pet Pet.new('Oliver Love')
+    person.save
+
+    person.pet_ids      # => [1,2]
+    person.pets         # => [..pets..]
+
+    pet = Pet.find(1) 
+    pet.person
 
 ## Transforms
 Since Redis only supports string values RedisAssist provides an interface for serialization in and out of Redis.
