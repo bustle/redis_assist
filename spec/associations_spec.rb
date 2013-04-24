@@ -21,6 +21,7 @@ describe Person do
   before do
     person.add_pet hubble
     person.add_pet oliver
+    person.save
   end
 
   describe "#has_many" do

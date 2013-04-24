@@ -19,7 +19,7 @@ module RedisAssist
         singular_name = StringHelper.singularize(name)
         class_name    = opts[:class_name] ? opts[:class_name] : StringHelper.camelize(singular_name)
 
-        attr_persist("#{singular_name}_ids", as: :list, default: [])
+        attr_persist("#{singular_name}_ids".to_sym, as: :list, default: [])
 
         define_method(name) do
           klass       = Module.const_get(class_name)
@@ -58,7 +58,7 @@ module RedisAssist
 
       def define_belongs_to(name, opts={})
         class_name = opts[:class_name] ? opts[:class_name] : StringHelper.camelize(name)
-        attr_persist("#{name}_id", as: :integer, default: nil)
+        attr_persist("#{name}_id".to_sym, as: :integer, default: nil)
 
         define_method(name) do
           klass = Module.const_get(class_name)
