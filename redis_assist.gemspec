@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Tyler Love"]
   s.email       = ["t@tylr.org"]
-  s.homepage    = "http://github.com/endlessinc/redis-assist"
+  s.homepage    = "http://github.com/endlessinc/redis_assist"
   s.summary     = %q{Persistant object oriented programming with redis}
   s.description = %q{Redis persistant object oriented programming}
 
