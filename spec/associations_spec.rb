@@ -14,11 +14,13 @@ describe Person do
   let(:hubble) { Pet.new(name: 'Hubble Love') }
   let(:oliver) { Pet.new(name: 'Oliver Bear Love') }
   let(:person) do
-    person = Person.new(name: 'Tyler Love ') 
+    person = Person.new(name: 'Tyler Love') 
     person.save
+  end
+
+  before do
     person.add_pet hubble
     person.add_pet oliver
-    person
   end
 
   describe "#has_many" do
@@ -31,6 +33,10 @@ describe Person do
     subject         { oliver }
     its(:id)        { should }
     its(:person_id) { should eq person.id }
+    it "should find the same person" do
+      cat = Pet.find(oliver.id)
+      cat.person.should eq person
+      cat.person_id.shoud eq person.id
+    end
   end
-
 end

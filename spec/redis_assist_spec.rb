@@ -12,7 +12,7 @@ class Person < RedisAssist::Base
   attr_persist :deleted_at,       :as => :time 
   attr_persist :favorite_number,  :as => :integer
 
-  has_many :cats, class_name: 'Cat'
+  has_many :cats
 
   def validate
     add_error(:first, "you must not be named #{first}. That would mean you're ugly!") if first.eql?('RJ')
@@ -162,5 +162,9 @@ describe Person do
 
       it { should_not }
     end
+  end
+
+  context "associations" do
+    before { person.save }
   end
 end
