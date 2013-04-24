@@ -1,20 +1,21 @@
 PATH
   remote: .
   specs:
-    redis_assist (0.2.0)
-      base62 (~> 0.1.4)
-      hiredis (~> 0.4.5)
-      redis (~> 3.0.1)
-      uuid (~> 2.3.6)
+    redis_assist (0.3.0)
+      inflections (~> 3.2.12.20130314)
+      redis (~> 3.0.3)
 
 GEM
   remote: https://rubygems.org/
   specs:
-    base62 (0.1.4)
+    activesupport (3.2.13)
+      i18n (= 0.6.1)
+      multi_json (~> 1.0)
     diff-lcs (1.1.3)
-    hiredis (0.4.5)
-    macaddr (1.6.1)
-      systemu (~> 2.5.0)
+    i18n (0.6.1)
+    inflections (3.2.12.20130314)
+      activesupport (~> 3.2.0)
+    multi_json (1.7.2)
     rake (0.9.6)
     redis (3.0.3)
     rspec (2.12.0)
@@ -25,9 +26,6 @@ GEM
     rspec-expectations (2.12.1)
       diff-lcs (~> 1.1.3)
     rspec-mocks (2.12.1)
-    systemu (2.5.2)
-    uuid (2.3.7)
-      macaddr (~> 1.0)
     yard (0.8.6.1)
 
 PLATFORMS

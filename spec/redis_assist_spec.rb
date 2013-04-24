@@ -12,9 +12,16 @@ class Person < RedisAssist::Base
   attr_persist :deleted_at,       :as => :time 
   attr_persist :favorite_number,  :as => :integer
 
+  has_many :cats
+
   def validate
     add_error(:first, "you must not be named #{first}. That would mean you're ugly!") if first.eql?('RJ')
   end 
+end
+
+class Cat < RedisAssist::Base
+  attr_persist  :name
+  belongs_to    :person
 end
 
 class TestModel < RedisAssist::Base
@@ -97,7 +104,7 @@ describe Person do
     describe "#exists?" do
       subject { person }
       it      { Person.exists?(person.id).should }
-      it      { Person.exists?(UUID.generate).should_not }
+      it      { Person.exists?(rand(123456789)).should_not }
     end
   end
 
@@ -155,5 +162,9 @@ describe Person do
 
       it { should_not }
     end
+  end
+
+  context "associations" do
+    before { person.save }
   end
 end
