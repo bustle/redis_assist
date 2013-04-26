@@ -87,7 +87,7 @@ describe Person do
       subject       { found }
       its(:id)      { should eq person.id }
       its(:first)   { should eq person.first }
-      it { Person.find_by_id("fakeid").should eq nil }
+      it            { Person.find_by_id("fakeid").should eq nil }
     end
 
     describe "#find_by_ids" do

@@ -33,7 +33,7 @@ module RedisAssist
       # Deprecated finds
       def find_by_id(id, opts={})
         raw_attributes = load_attributes(id)
-        return nil unless raw_attributes[id]
+        return nil unless raw_attributes[id][:exists].value
         obj = new(id: id, raw_attributes: raw_attributes[id])
         (obj.deleted? && !opts[:deleted].eql?(true)) ? nil : obj
       end
@@ -42,8 +42,10 @@ module RedisAssist
         attrs = load_attributes(*ids)
         raw_attributes = attrs
         ids.each_with_object([]) do |id, instances| 
-          instance = new(id: id, raw_attributes: raw_attributes[id]) unless raw_attributes[id].nil?
-          instances << instance if instance && (!instance.deleted? || opts[:deleted].eql?(true))
+          if raw_attributes[id][:exists].value
+            instance = new(id: id, raw_attributes: raw_attributes[id])
+            instances << instance if instance && (!instance.deleted? || opts[:deleted].eql?(true))
+          end
         end
       end
   
@@ -152,24 +154,16 @@ module RedisAssist
   
             future_fields = pipe.hmget(key_for(id, :attributes), fields.keys)
 
-            futures[id] = { lists: future_lists, hashes: future_hashes, fields: future_fields } 
+            futures[id] = { 
+              lists:  future_lists, 
+              hashes: future_hashes, 
+              fields: future_fields, 
+              exists: pipe.exists(key_for(id, :attributes))
+            } 
           end
         end
 
-        # Remove the empty futures
-        future_attrs = ids.each_with_object({}) do |id, obj|
-           obj[id] = future_attrs[id] unless future_attrs[id][:fields].value.select{|v| !v.nil? }.empty?
-        end
-
-        # Map futures to attributes
-        future_attrs.each_with_object(attrs) do |kv, obj|
-          lists       = kv[1][:lists].each_with_object({}){|kv,obj| obj[kv[0]] = kv[1].value unless kv[1].value.nil? }
-          hashes      = kv[1][:hashes].each_with_object({}){|kv,obj| obj[kv[0]] = kv[1].value unless kv[1].value.nil?}
-          fields      = Hash[*self.fields.keys.zip(kv[1][:fields].value).flatten] 
-          obj[kv[0]]  = { lists: lists, hashes: hashes, fields: fields }
-        end
-
-        attrs
+        future_attrs
       end
       
       def hash_to_redis(obj)
@@ -181,8 +175,13 @@ module RedisAssist
       def define_list(name)
         define_method(name) do
           opts = self.class.persisted_attrs[name]
-          self.send("#{name}=", opts[:default]) if !lists[name] && opts[:default]
-          lists[name]
+
+          if !lists[name] && opts[:default]
+            opts[:default]
+          else
+            send("#{name}=", lists[name].value) if lists[name].is_a?(Redis::Future)
+            lists[name]
+          end
         end
   
         define_method("#{name}=") do |val|
@@ -194,8 +193,12 @@ module RedisAssist
       def define_hash(name)
         define_method(name) do
           opts = self.class.persisted_attrs[name]
-          self.send("#{name}=", opts[:default]) if !hashes[name] && opts[:default]
-          hashes[name]
+
+          if !hashes[name] && opts[:default]
+            opts[:default]
+          else
+            self.send("#{name}=", hashes[name].value)
+          end
         end
   
         define_method("#{name}=") do |val|
@@ -206,6 +209,11 @@ module RedisAssist
 
       def define_attribute(name)
         define_method(name) do 
+          if attributes.is_a?(Redis::Future)
+            value = attributes.value 
+            self.attributes = value ? Hash[*self.class.fields.keys.zip(value).flatten] : {}
+          end
+
           self.class.transform(:from, name, attributes[name])
         end
   
@@ -224,11 +232,13 @@ module RedisAssist
       self.hashes     = {}
   
       if attrs[:id]
-        self.id = attrs[:id]
-        load_attributes(attrs[:raw_attributes])
       end
 
-      return self if id 
+      if attrs[:id]
+        self.id = attrs[:id]
+        load_attributes(attrs[:raw_attributes])
+        return self if self.id 
+      end
   
       self.new_record = true
   
@@ -259,18 +269,24 @@ module RedisAssist
       redis.multi do
         # build the arguments to pass to redis hmset
         # and insure the attributes are explicitely declared
-        attribute_args = hash_to_redis(attributes)
- 
-        redis.hmset(key_for(:attributes), *attribute_args)
+
+        unless attributes.is_a?(Redis::Future)
+          attribute_args = hash_to_redis(attributes)
+          redis.hmset(key_for(:attributes), *attribute_args)
+        end
   
         lists.each do |name, val|
-          redis.del(key_for(name))
-          redis.rpush(key_for(name), val) if val && !val.empty?
+          if val && !val.is_a?(Redis::Future) 
+            redis.del(key_for(name))
+            redis.rpush(key_for(name), val) unless val.empty?
+          end
         end
   
         hashes.each do |name, val|
-          hash_as_args = hash_to_redis(val)
-          redis.hmset(key_for(name), *hash_as_args)
+          unless val.is_a?(Redis::Future)
+            hash_as_args = hash_to_redis(val)
+            redis.hmset(key_for(name), *hash_as_args)
+          end
         end
       end
 
@@ -344,10 +360,9 @@ module RedisAssist
   
     def load_attributes(raw_attributes)
       return nil unless raw_attributes
-      load_response   = self.class.load_attributes(id)
-      self.lists      = load_response[id][:lists] 
-      self.hashes     = load_response[id][:hashes] 
-      self.attributes = load_response[id][:fields]
+      self.lists      = raw_attributes[:lists] 
+      self.hashes     = raw_attributes[:hashes] 
+      self.attributes = raw_attributes[:fields]
       self.new_record = false
     end
   
