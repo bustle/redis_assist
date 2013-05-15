@@ -209,16 +209,11 @@ module RedisAssist
 
       def define_attribute(name)
         define_method(name) do 
-          if attributes.is_a?(Redis::Future)
-            value = attributes.value 
-            self.attributes = value ? Hash[*self.class.fields.keys.zip(value).flatten] : {}
-          end
-
-          self.class.transform(:from, name, attributes[name])
+          read_attribute(name)
         end
   
         define_method("#{name}=") do |val| 
-          attributes[name] = self.class.transform(:to, name, val)
+          write_attribute(name, val)
         end
       end
     end
@@ -250,6 +245,19 @@ module RedisAssist
       end
   
       raise "RedisAssist: #{self.class.name} does not support attributes: #{attrs.keys.join(', ')}" if attrs.length > 0
+    end
+
+    def read_attribute(name)
+      if attributes.is_a?(Redis::Future)
+        value = attributes.value 
+        self.attributes = value ? Hash[*self.class.fields.keys.zip(value).flatten] : {}
+      end
+
+      self.class.transform(:from, name, attributes[name])
+    end
+
+    def write_attribute(name, val)
+      attributes[name] = self.class.transform(:to, name, val)
     end
   
     def saved?
