@@ -174,36 +174,21 @@ module RedisAssist
 
       def define_list(name)
         define_method(name) do
-          opts = self.class.persisted_attrs[name]
-
-          if !lists[name] && opts[:default]
-            opts[:default]
-          else
-            send("#{name}=", lists[name].value) if lists[name].is_a?(Redis::Future)
-            lists[name]
-          end
+          read_list(name)
         end
   
         define_method("#{name}=") do |val|
-          raise "RedisAssist: tried to store a #{val.class.name} as Array" unless val.is_a?(Array)
-          lists[name] = val
+          write_list(name, val)
         end
       end
 
       def define_hash(name)
         define_method(name) do
-          opts = self.class.persisted_attrs[name]
-
-          if !hashes[name] && opts[:default]
-            opts[:default]
-          else
-            self.send("#{name}=", hashes[name].value)
-          end
+          read_hash(name)
         end
   
         define_method("#{name}=") do |val|
-          raise "RedisAssist: tried to store a #{val.class.name} as Hash" unless val.is_a?(Hash)
-          hashes[name] = val
+          write_hash(name, val)
         end
       end
 
@@ -247,6 +232,8 @@ module RedisAssist
       raise "RedisAssist: #{self.class.name} does not support attributes: #{attrs.keys.join(', ')}" if attrs.length > 0
     end
 
+
+    # Transform and read a standard attribute
     def read_attribute(name)
       if attributes.is_a?(Redis::Future)
         value = attributes.value 
@@ -256,8 +243,45 @@ module RedisAssist
       self.class.transform(:from, name, attributes[name])
     end
 
+    # Transform and read a list attribute
+    def read_list(name)
+      opts = self.class.persisted_attrs[name]
+
+      if !lists[name] && opts[:default]
+        opts[:default]
+      else
+        send("#{name}=", lists[name].value) if lists[name].is_a?(Redis::Future)
+        lists[name]
+      end
+    end
+
+    # Transform and read a hash attribute
+    def read_hash(name)
+      opts = self.class.persisted_attrs[name]
+
+      if !hashes[name] && opts[:default]
+        opts[:default]
+      else
+        self.send("#{name}=", hashes[name].value)
+      end
+    end
+
+
+    # Transform and write a standard attribute value
     def write_attribute(name, val)
       attributes[name] = self.class.transform(:to, name, val)
+    end
+
+    # Transform and write a list value
+    def write_list(name, val)
+      raise "RedisAssist: tried to store a #{val.class.name} as Array" unless val.is_a?(Array)
+      lists[name] = val
+    end
+
+    # Transform and write a hash attribute 
+    def write_hash(name, val)
+      raise "RedisAssist: tried to store a #{val.class.name} as Hash" unless val.is_a?(Hash)
+      hashes[name] = val
     end
   
     def saved?
