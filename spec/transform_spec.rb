@@ -12,7 +12,7 @@ end
 
 describe TestTransform do
   let(:transform) { TestTransform }
-  let(:val)       { UUID.generate }
+  let(:val)       { rand(120320230).to_s }
   subject         { transform }
   its(:key)       { should eq :test }
   it              { subject.from(val).should eq val }
@@ -37,5 +37,13 @@ describe TestModel do
     its(:mathy)   { should eq mathy } 
     its(:parsy)   { should eq parsy } 
     its(:timing)  { timing.eql?(model.timing).should } 
+  end
+
+  context "nil json" do
+    let(:parsy)   { nil }
+    let(:model)   { TestModel.new(attrs) }
+    before        { model.save }
+    subject       { model }
+    its(:parsy)   { should be nil }
   end
 end
