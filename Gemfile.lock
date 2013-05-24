@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    redis_assist (0.4.4)
+    redis_assist (0.4.5)
       inflections (~> 3.2.12.20130314)
       redis (~> 3.0.3)
 

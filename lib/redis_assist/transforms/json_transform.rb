@@ -1,9 +1,9 @@
 class JsonTransform < RedisAssist::Transform
   def self.to(val)
-    JSON.generate(val) if val
+    JSON.generate(val) if val && !val.empty?
   end
 
   def self.from(val)
-    val ? JSON.parse(val) : nil
+    val && !val.empty? ? JSON.parse(val) : nil
   end
 end
