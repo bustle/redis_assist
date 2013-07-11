@@ -85,6 +85,7 @@ module RedisAssist
           end
         end
 
+        record.send(:invoke_callback, :after_save)
         record.send(:invoke_callback, :after_update)
       end
 
