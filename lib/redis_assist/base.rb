@@ -64,6 +64,9 @@ module RedisAssist
         record = find(id)
         return false unless record
 
+        record.send(:invoke_callback, :before_update)
+        record.send(:invoke_callback, :before_save)
+
         redis.multi do
           params.each do |attr, val|
             if persisted_attrs.include?(attr)
