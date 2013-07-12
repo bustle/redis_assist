@@ -1,3 +1,4 @@
+require 'spec_helper'
 require 'redis_assist'
 
 class TestTransform < RedisAssist::Transform; end
@@ -45,5 +46,16 @@ describe TestModel do
     before        { model.save }
     subject       { model }
     its(:parsy)   { should be nil }
+  end
+
+  context "time parsing" do
+    subject { model }
+    let(:new_time) { Time.now }
+    before do
+      model.timing = new_time.to_s
+      model.save
+    end
+
+    its(:timing) { subject.to_s.should eq new_time.to_s }
   end
 end
