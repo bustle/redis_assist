@@ -11,7 +11,9 @@ module RedisAssist
       base.after_create  {|record| record.send(:new_record=, false) }
     end
  
+
     class << self
+
 
       def attr_persist(name, opts={})
         persisted_attrs[name] = opts
@@ -25,10 +27,39 @@ module RedisAssist
         end
       end
 
+
+      # Get count of records
+      def count
+        redis.zcard(index_key_for(:id))
+      end
+
+
       def find(ids, opts={})
         ids.is_a?(Array) ? find_by_ids(ids, opts) : find_by_id(ids, opts)
       end
-  
+
+
+      # find articles in batches
+      def find_in_batches(params={})
+        start       = params[:start]      || 0
+        marker      = start
+        batch_size  = params[:batch_size] || 500
+        record_ids  = redis.zrange(index_key_for(:id), marker, marker + batch_size - 1)
+
+        while record_ids.length > 0
+          records_count   = record_ids.length
+          marker          += records_count
+          records         = find(record_ids)
+
+          yield records
+
+          break if records_count < batch_size
+
+          record_ids = redis.zrange(index_key_for(:id), marker, marker + batch_size - 1)
+        end
+      end
+
+
       # Deprecated finds
       def find_by_id(id, opts={})
         raw_attributes = load_attributes(id)
@@ -37,6 +68,7 @@ module RedisAssist
         (obj.deleted? && !opts[:deleted].eql?(true)) ? nil : obj
       end
   
+
       def find_by_ids(ids, opts={})
         attrs = load_attributes(*ids)
         raw_attributes = attrs
@@ -48,14 +80,17 @@ module RedisAssist
         end
       end
   
+
       def create(attrs={})
         roll = new(attrs)
         roll.save ? roll : false
       end
 
+
       def exists?(id)
         redis.exists(key_for(id, :attributes))      
       end
+
 
       # TODO: needs a refactor. Should this be an interface for skipping validations?
       # Should we optimize and skip the find? Support an array of ids?
@@ -91,6 +126,7 @@ module RedisAssist
         record.send(:invoke_callback, :after_update)
       end
 
+
       def transform(direction, attr, val)
         transformer = RedisAssist.transforms[persisted_attrs[attr][:as]]
 
@@ -101,45 +137,55 @@ module RedisAssist
         end
       end
 
+
       def fields
         persisted_attrs.select{|k,v| !(v[:as].eql?(:list) || v[:as].eql?(:hash)) }
       end
   
+
       def lists 
         persisted_attrs.select{|k,v| v[:as].eql?(:list) }
       end
   
+
       def hashes 
         persisted_attrs.select{|k,v| v[:as].eql?(:hash) }
       end
+
 
       # TODO: Attribute class
       def persisted_attrs
         @persisted_attrs ||= {}
       end
 
+
       def index_key_for(index_name)
         "#{key_prefix}:index:#{index_name}"
       end
+
 
       def key_for(id, attribute)
         "#{key_prefix}:#{id}:#{attribute}"
       end
   
+
       def key_prefix(val=nil)
         return self.key_prefix = val if val
         return @key_prefix if @key_prefix
         return self.key_prefix = StringHelper.underscore(name)
       end
   
+    
       def key_prefix=(val)
         @key_prefix = val
       end
    
+      
       def redis
         RedisAssist::Config.redis_client
       end
   
+
       def load_attributes(*ids)
         future_attrs  = {}
         attrs         = {}
@@ -173,11 +219,14 @@ module RedisAssist
         future_attrs
       end
       
+
       def hash_to_redis(obj)
         obj.each_with_object([]) {|kv,args| args<<kv[0]<<kv[1] }
       end
 
+
       private
+
 
       def define_list(name)
         define_method(name) do
@@ -189,6 +238,7 @@ module RedisAssist
         end
       end
 
+
       def define_hash(name)
         define_method(name) do
           read_hash(name)
@@ -198,6 +248,7 @@ module RedisAssist
           write_hash(name, val)
         end
       end
+
 
       def define_attribute(name)
         define_method(name) do 
@@ -210,6 +261,7 @@ module RedisAssist
       end
     end
   
+
     attr_accessor :attributes
     attr_reader :id
   
@@ -307,12 +359,12 @@ module RedisAssist
 
       redis.multi do
         # Add to the index
-        redis.zadd(self.class.index_key_for(:id), id, id) if new_record?
+        insert_into_index(:id, id, id) if new_record? 
 
         # Remove soft-deleted record from index
         if deleted?
-          redis.zrem(self.class.index_key_for(:id), id)
-          redis.zadd(self.class.index_key_for(:deleted), deleted_at.to_i, id)
+          remove_from_index(:id, id)
+          insert_into_index(:deleted_at, deleted_at.to_i, id)
         end
 
         # build the arguments to pass to redis hmset
@@ -397,6 +449,14 @@ module RedisAssist
 
     private
   
+
+    def insert_into_index(name, score, member)
+      redis.zadd(self.class.index_key_for(name), score, member)
+    end
+
+    def remove_from_index(name, member)
+      redis.zrem(self.class.index_key_for(name), member)
+    end
   
     def generate_id
       redis.incr("#{self.class.key_prefix}:id_sequence")
