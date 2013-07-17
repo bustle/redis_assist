@@ -8,7 +8,6 @@ module RedisAssist
     def self.inherited(base)
       base.before_create {|record| record.send(:created_at=, Time.now.to_f) if record.respond_to?(:created_at) }
       base.before_update {|record| record.send(:updated_at=, Time.now.to_f) if record.respond_to?(:updated_at) }
-      base.after_delete  {|record| record.send(:deleted_at=, Time.now.to_f) if record.respond_to?(:deleted_at) }
       base.after_create  {|record| record.send(:new_record=, false) }
     end
  
@@ -117,6 +116,10 @@ module RedisAssist
       # TODO: Attribute class
       def persisted_attrs
         @persisted_attrs ||= {}
+      end
+
+      def index_key_for(index_name)
+        "#{key_prefix}:index:#{index_name}"
       end
 
       def key_for(id, attribute)
@@ -303,9 +306,17 @@ module RedisAssist
       self.id = generate_id if new_record?
 
       redis.multi do
+        # Add to the index
+        redis.zadd(self.class.index_key_for(:id), id, id) if new_record?
+
+        # Remove soft-deleted record from index
+        if deleted?
+          redis.zrem(self.class.index_key_for(:id), id)
+          redis.zadd(self.class.index_key_for(:deleted), deleted_at.to_i, id)
+        end
+
         # build the arguments to pass to redis hmset
         # and insure the attributes are explicitely declared
-
         unless attributes.is_a?(Redis::Future)
           attribute_args = hash_to_redis(attributes)
           redis.hmset(key_for(:attributes), *attribute_args)
@@ -354,10 +365,11 @@ module RedisAssist
         self.deleted_at = Time.now.to_f if respond_to?(:deleted_at)
         save
       else
-        redis.pipelined do |pipe|
-          pipe.del(key_for(:attributes))
+        redis.multi do
+          redis.zrem(self.class.primary_key_index_key, id)
+          redis.del(key_for(:attributes))
           lists.merge(hashes).each do |name|
-            pipe.del(key_for(name))
+            redis.del(key_for(name))
           end
         end
       end
@@ -365,7 +377,7 @@ module RedisAssist
       invoke_callback(:after_delete)
       self
     end
-  
+
     def new_record?
       !!new_record
     end
