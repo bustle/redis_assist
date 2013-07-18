@@ -64,4 +64,21 @@ describe Person do
       Person.count.should > 0
     end
   end
+
+  describe ".last" do
+    it "should find the last person" do
+    end
+  end
+
+  describe ".first" do
+    it "should find the first person" do
+      Person.first.should be_a Person
+    end
+  end
+
+  describe ".last" do
+    it "should find the first person" do
+      Person.last.id.should eq person.id
+    end
+  end
 end

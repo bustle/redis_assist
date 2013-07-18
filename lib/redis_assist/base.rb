@@ -34,6 +34,20 @@ module RedisAssist
       end
 
 
+      def first(amount=1)
+        offset  = amount - 1
+        members = redis.zrange(index_key_for(:id), 0, offset)
+        find(amount > 1 ? members : members.first)
+      end
+
+
+      def last(amount=1)
+        offset  = amount * -1
+        members = redis.zrange(index_key_for(:id), offset, -1)
+        find(amount > 1 ? members : members.first)
+      end
+ 
+
       def find(ids, opts={})
         ids.is_a?(Array) ? find_by_ids(ids, opts) : find_by_id(ids, opts)
       end
@@ -263,8 +277,11 @@ module RedisAssist
   
 
     attr_accessor :attributes
-    attr_reader :id
-  
+
+    def id
+      @id.to_i
+    end
+    
     def initialize(attrs={})
       self.attributes = {}
       self.lists      = {}
