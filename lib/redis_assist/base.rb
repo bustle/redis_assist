@@ -108,7 +108,7 @@ module RedisAssist
 
       # TODO: needs a refactor. Should this be an interface for skipping validations?
       # Should we optimize and skip the find? Support an array of ids?
-      def update(id, params={})
+      def update(id, params={}, opts={})
         record = find(id)
         return false unless record
 
@@ -288,9 +288,6 @@ module RedisAssist
       self.hashes     = {}
   
       if attrs[:id]
-      end
-
-      if attrs[:id]
         self.id = attrs[:id]
         load_attributes(attrs[:raw_attributes])
         return self if self.id 
@@ -338,7 +335,8 @@ module RedisAssist
       if !hashes[name] && opts[:default]
         opts[:default]
       else
-        self.send("#{name}=", hashes[name].value)
+        self.send("#{name}=", hashes[name].value) if hashes[name].is_a?(Redis::Future)
+        hashes[name]
       end
     end
 
@@ -362,6 +360,36 @@ module RedisAssist
   
     def saved?
       !!(new_record?.eql?(false) && id)
+    end
+
+    # Update fields without hitting the callbacks
+    def update_columns(attrs)
+      redis.multi do
+        attrs.each do |attr, value|
+          if self.class.fields.has_key?(attr)
+            write_attribute(attr, value)  
+            redis.hset(key_for(:attributes), attr, value) unless new_record?
+          end
+
+          if self.class.lists.has_key?(attr)
+            write_list(attr, value)       
+
+            unless new_record?
+              redis.del(key_for(attr))
+              redis.rpush(key_for(attr), value) unless value.empty?
+            end
+          end
+
+          if self.class.hashes.has_key?(attr)
+            write_hash(attr, value)       
+
+            unless new_record?
+              hash_as_args = hash_to_redis(value)
+              redis.hmset(key_for(attr), *hash_as_args)
+            end
+          end
+        end
+      end
     end
   
     def save

@@ -95,11 +95,24 @@ describe Person do
       end
 
       subject           { Person.find(person.id) }
-      # its(:last)        { should eq 'Dick Brain' }
       its(:birthday)    { should eq birthday }
+      # its(:last)        { should eq 'Dick Brain' }
       # its(:drugs)       { should eq ['weed'] }
       # its(:smokes_weed) { should eq false }
       # its(:info)        { should eq({ 'super' => 'cool' }) }
+    end
+
+    describe ".update_columns" do
+      let(:info) { { 'super' => 'not cool' } }
+      before do
+        person.save
+        person.update_columns(last: 'McCann', drugs: ['nope'], info: info)
+      end
+
+      subject     { Person.find(person.id) }
+      its(:last)  { binding.pry; should eq 'McCann' }
+      its(:drugs) { should eq ['nope'] }
+      its(:info)  { should eq info }
     end
   end
 
