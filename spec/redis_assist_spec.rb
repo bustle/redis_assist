@@ -103,16 +103,21 @@ describe Person do
     end
 
     describe ".update_columns" do
-      let(:info) { { 'super' => 'not cool' } }
+      let(:info)              { { 'super' => 'not cool' } }
+      let(:updated_birthday)  { Time.now }
+
       before do
         person.save
-        person.update_columns(last: 'McCann', drugs: ['nope'], info: info)
+        person.update_columns(last: 'McCann', drugs: ['nope'], info: info, birthday: updated_birthday)
       end
 
-      subject     { Person.find(person.id) }
-      its(:last)  { binding.pry; should eq 'McCann' }
-      its(:drugs) { should eq ['nope'] }
-      its(:info)  { should eq info }
+      subject         { Person.find(person.id) }
+      its(:last)      { should eq 'McCann' }
+      its(:drugs)     { should eq ['nope'] }
+      its(:info)      { should eq info }
+      it "should transform the value"  do 
+        subject.birthday.to_f.should eq updated_birthday.to_f
+      end
     end
   end
 

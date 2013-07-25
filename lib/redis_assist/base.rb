@@ -368,7 +368,7 @@ module RedisAssist
         attrs.each do |attr, value|
           if self.class.fields.has_key?(attr)
             write_attribute(attr, value)  
-            redis.hset(key_for(:attributes), attr, value) unless new_record?
+            redis.hset(key_for(:attributes), attr, self.class.transform(:to, attr, value)) unless new_record?
           end
 
           if self.class.lists.has_key?(attr)
