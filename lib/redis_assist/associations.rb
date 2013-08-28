@@ -1,5 +1,6 @@
 module RedisAssist
   module Associations
+
     def self.included(base)
       base.extend ClassMethods
     end

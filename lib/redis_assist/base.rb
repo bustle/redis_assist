@@ -22,6 +22,8 @@ module RedisAssist
           define_list(name)
         elsif opts[:as].eql?(:hash)
           define_hash(name)
+        elsif opts[:as].eql?(:set)
+          define_set(name)
         else
           define_attribute(name)
         end
@@ -108,7 +110,7 @@ module RedisAssist
 
       # TODO: needs a refactor. Should this be an interface for skipping validations?
       # Should we optimize and skip the find? Support an array of ids?
-      def update(id, params={}, opts={})
+      def update(id, params={})
         record = find(id)
         return false unless record
 
@@ -126,6 +128,14 @@ module RedisAssist
               if lists.keys.include? attr
                 redis.del(key_for(id, attr)) 
                 redis.rpush(key_for(id, attr), val) unless val.empty?
+              end
+
+              if sets.keys.include? attr
+                redis.sadd(key_for(id, attr), *val) unless val.empty?
+              end
+
+              if sorted_sets.keys.include? attr
+                redis.zadd(key_for(id, attr), *val) unless val.empty?
               end
 
               if hashes.keys.include? attr
@@ -159,6 +169,16 @@ module RedisAssist
 
       def lists 
         persisted_attrs.select{|k,v| v[:as].eql?(:list) }
+      end
+
+
+      def sets
+        persisted_attrs.select{|k,v| v[:as].eql?(:set) }
+      end
+
+
+      def sorted_sets
+        persisted_attrs.select{|k,v| v[:as].eql?(:sorted_set) }
       end
   
 
@@ -207,14 +227,24 @@ module RedisAssist
         # Load all the futures into an organized Hash
         redis.pipelined do |pipe|
           ids.each_with_object(future_attrs) do |id, futures|
-            future_lists  = {}
-            future_hashes = {}
-            future_fields = nil
+            future_lists        = {}
+            future_sets         = {}
+            future_sorted_sets  = {}
+            future_hashes       = {}
+            future_fields       = nil
   
             lists.each do |name, opts|
               future_lists[name]  = pipe.lrange(key_for(id, name), 0, -1)
             end
-  
+
+            sets.each do |name, opts|
+              future_sets[name] = pipe.smembers(key_for(id, name))
+            end
+ 
+            sorted_sets.each do |name, opts|
+              future_sorted_sets[name] = pipe.zrange(key_for(id, name), 0, -1)
+            end
+
             hashes.each do |name, opts|
               future_hashes[name] = pipe.hgetall(key_for(id, name))
             end
@@ -222,10 +252,12 @@ module RedisAssist
             future_fields = pipe.hmget(key_for(id, :attributes), fields.keys)
 
             futures[id] = { 
-              lists:  future_lists, 
-              hashes: future_hashes, 
-              fields: future_fields, 
-              exists: pipe.exists(key_for(id, :attributes))
+              lists:        future_lists, 
+              sets:         future_sets, 
+              sorted_sets:  future_sorted_sets, 
+              hashes:       future_hashes, 
+              fields:       future_fields, 
+              exists:       pipe.exists(key_for(id, :attributes))
             } 
           end
         end
@@ -249,6 +281,17 @@ module RedisAssist
   
         define_method("#{name}=") do |val|
           write_list(name, val)
+        end
+      end
+
+
+      def define_set(name)
+        define_method(name) do
+          read_set(name)
+        end
+ 
+        define_method("add_to_#{name}") do |val|
+          add_to_set(name, val)
         end
       end
 
@@ -283,9 +326,11 @@ module RedisAssist
     end
     
     def initialize(attrs={})
-      self.attributes = {}
-      self.lists      = {}
-      self.hashes     = {}
+      self.attributes   = {}
+      self.lists        = {}
+      self.sets         = {}
+      self.sorted_sets  = {}
+      self.hashes       = {}
   
       if attrs[:id]
         self.id = attrs[:id]
@@ -316,7 +361,7 @@ module RedisAssist
       self.class.transform(:from, name, attributes[name])
     end
 
-    # Transform and read a list attribute
+    # Read a list attribute
     def read_list(name)
       opts = self.class.persisted_attrs[name]
 
@@ -325,6 +370,29 @@ module RedisAssist
       else
         send("#{name}=", lists[name].value) if lists[name].is_a?(Redis::Future)
         lists[name]
+      end
+    end
+
+    # Read a set attribute
+    def read_set(name)
+      opts = self.class.persisted_attrs[name]
+
+      if !sets[name] && opts[:default]
+        opts[:default]
+      else
+        self.send("#{name}=", sets[name].value) if sets[name].is_a?(Redis::Future)
+        sets[name]
+      end
+    end
+
+    def read_sorted_set(name)
+      opts = self.class.persisted_attrs[name]
+
+      if !sorted_set[name] && opts[:default]
+        opts[:default]
+      else
+        send("#{name}=", sorted_set[name].value) if sorted_set[name].is_a?(Redis::Future)
+        sorted_set[name]
       end
     end
 
@@ -352,6 +420,18 @@ module RedisAssist
       lists[name] = val
     end
 
+    def add_to_set(name, *val)
+      sets[name] = (sets[name] + val).uniq
+    end
+
+    def add_to_set(name, *rank_and_value)
+      sorted_sets[name] = (sorted_sets[name] + val)
+    end
+
+    def write_set(name, *val)
+      sets[name] = val
+    end
+
     # Transform and write a hash attribute 
     def write_hash(name, val)
       raise "RedisAssist: tried to store a #{val.class.name} as Hash" unless val.is_a?(Hash)
@@ -366,21 +446,27 @@ module RedisAssist
     def update_columns(attrs)
       redis.multi do
         attrs.each do |attr, value|
+          
           if self.class.fields.has_key?(attr)
             write_attribute(attr, value)  
             redis.hset(key_for(:attributes), attr, self.class.transform(:to, attr, value)) unless new_record?
-          end
 
-          if self.class.lists.has_key?(attr)
+          elsif self.class.lists.has_key?(attr)
             write_list(attr, value)       
 
             unless new_record?
               redis.del(key_for(attr))
               redis.rpush(key_for(attr), value) unless value.empty?
             end
-          end
 
-          if self.class.hashes.has_key?(attr)
+          elsif self.class.sets.has_key?(attr)
+            write_set(attr, *value)       
+
+            unless new_record?
+              redis.radd(key_for(attr), *value) unless value.empty?
+            end
+
+          elsif self.class.hashes.has_key?(attr)
             write_hash(attr, value)       
 
             unless new_record?
@@ -388,6 +474,7 @@ module RedisAssist
               redis.hmset(key_for(attr), *hash_as_args)
             end
           end
+
         end
       end
     end
@@ -425,7 +512,13 @@ module RedisAssist
             redis.rpush(key_for(name), val) unless val.empty?
           end
         end
-  
+   
+        sets.each do |name, val|
+          if val && !val.is_a?(Redis::Future) 
+            redis.sadd(key_for(name), *val) unless val.empty?
+          end
+        end
+
         hashes.each do |name, val|
           unless val.is_a?(Redis::Future)
             hash_as_args = hash_to_redis(val)
@@ -489,7 +582,7 @@ module RedisAssist
   
   
     attr_writer   :id
-    attr_accessor :lists, :hashes, :new_record
+    attr_accessor :lists, :sets, :sorted_sets, :hashes, :new_record
  
 
     private
@@ -513,10 +606,12 @@ module RedisAssist
   
     def load_attributes(raw_attributes)
       return nil unless raw_attributes
-      self.lists      = raw_attributes[:lists] 
-      self.hashes     = raw_attributes[:hashes] 
-      self.attributes = raw_attributes[:fields]
-      self.new_record = false
+      self.lists        = raw_attributes[:lists] 
+      self.sets         = raw_attributes[:sets] 
+      self.sorted_sets  = raw_attributes[:sorted_sets] 
+      self.hashes       = raw_attributes[:hashes] 
+      self.attributes   = raw_attributes[:fields]
+      self.new_record   = false
     end
   
     ##
