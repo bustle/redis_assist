@@ -4,6 +4,7 @@ module RedisAssist
     include Callbacks
     include Validations
     include Associations
+    include DataType::Registry
   
     def self.inherited(base)
       base.before_create {|record| record.send(:created_at=, Time.now.to_f) if record.respond_to?(:created_at) }
@@ -17,16 +18,17 @@ module RedisAssist
 
       def attr_persist(name, opts={})
         persisted_attrs[name] = opts
+        register_persisted_attribute!(name, opts)
 
-        if opts[:as].eql?(:list)
-          define_list(name)
-        elsif opts[:as].eql?(:hash)
-          define_hash(name)
-        elsif opts[:as].eql?(:set)
-          define_set(name)
-        else
-          define_attribute(name)
-        end
+        # if opts[:as].eql?(:list)
+        #   define_list(name)
+        # elsif opts[:as].eql?(:hash)
+        #   define_hash(name)
+        # elsif opts[:as].eql?(:set)
+        #   define_set(name)
+        # else
+        #   define_attribute(name)
+        # end
       end
 
 
