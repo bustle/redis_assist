@@ -38,7 +38,7 @@ module RedisAssist
         to      = from + limit - 1
         members = redis.zrange(index_key_for(:id), from, to)
 
-        find(amount > 1 ? members : members.first)
+        find(limit > 1 ? members : members.first)
       end
 
 
@@ -47,7 +47,7 @@ module RedisAssist
         to      = from + limit - 1
         members = redis.zrange(index_key_for(:id), (from * -1) + -1, (to * -1) + -1)
 
-        find(amount > 1 ? members : members.first)
+        find(limit > 1 ? members : members.first)
       end
 
 
