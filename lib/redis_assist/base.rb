@@ -45,7 +45,7 @@ module RedisAssist
       def last(limit=1, offset=0)
         from    = offset
         to      = from + limit - 1
-        members = redis.zrange(index_key_for(:id), (from * -1) + -1, (to * -1) + -1)
+        members = redis.zrange(index_key_for(:id), (to * -1) + -1, (from * -1) + -1).reverse
 
         find(limit > 1 ? members : members.first)
       end
