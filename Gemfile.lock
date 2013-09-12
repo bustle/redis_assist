@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    redis_assist (0.7.0)
+    redis_assist (0.7.2)
       inflections (~> 3.2.12.20130314)
       redis (~> 3.0.3)
 
@@ -17,7 +17,7 @@ GEM
     inflections (3.2.12.20130314)
       activesupport (~> 3.2.0)
     method_source (0.8.1)
-    multi_json (1.7.7)
+    multi_json (1.7.9)
     pry (0.9.12.2)
       coderay (~> 1.0.5)
       method_source (~> 0.8)

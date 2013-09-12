@@ -466,13 +466,14 @@ module RedisAssist
         save
       else
         redis.multi do
-          redis.zrem(self.class.primary_key_index_key, id)
           redis.del(key_for(:attributes))
           lists.merge(hashes).each do |name|
             redis.del(key_for(name))
           end
         end
       end
+
+      remove_from_index(:id, id)
 
       invoke_callback(:after_delete)
       self
