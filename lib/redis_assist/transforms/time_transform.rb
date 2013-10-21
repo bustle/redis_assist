@@ -1,7 +1,7 @@
 class TimeTransform < RedisAssist::Transform
   def self.to(val)
     time = val.is_a?(String) ? Time.parse(val) : val
-    time.to_f
+    time ? time.to_f : time
   end
 
   def self.from(val)

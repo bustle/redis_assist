@@ -30,7 +30,7 @@ describe Person do
       let(:bad_attrs) { attrs.merge(first: 'RJ') }
       subject         { Person.new(bad_attrs) }
       its(:save)      { should_not }
-      its(:errors)    { subject.empty?.should_not }
+      its(:errors)    { subject.errors.empty?.should_not }
       it              { subject.valid?.should_not }
     end
   end
@@ -147,6 +147,19 @@ describe Person do
       subject { Person.find_by_id(person.id) }
 
       it { should_not }
+    end
+
+    describe ".undelete" do
+      before do
+        person.save
+        person.delete
+        person.undelete
+      end
+
+      subject { Person.find_by_id(person.id) }
+
+      it { should }
+      its(:deleted?) { should_not }
     end
   end
 

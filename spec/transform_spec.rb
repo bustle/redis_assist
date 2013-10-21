@@ -56,6 +56,6 @@ describe TestModel do
       model.save
     end
 
-    its(:timing) { subject.to_s.should eq new_time.to_s }
+    its(:timing) { subject.timing.to_s.should eq new_time.to_s }
   end
 end

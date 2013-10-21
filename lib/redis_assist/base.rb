@@ -479,6 +479,15 @@ module RedisAssist
       self
     end
 
+    def undelete
+      if deleted?
+        remove_from_index(:deleted_at, id)
+        insert_into_index(:id, id, id)
+        self.deleted_at = nil
+      end
+      save
+    end
+
     def new_record?
       !!new_record
     end
