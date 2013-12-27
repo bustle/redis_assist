@@ -9,6 +9,7 @@ require 'redis_assist/callbacks'
 require 'redis_assist/validations'
 require 'redis_assist/associations'
 require 'redis_assist/base'
+require 'redis_assist/utils'
 
 # == Setup & Configuration
 # RedisAssist depends on the redis-rb gem to communicate with redis.

@@ -33,6 +33,13 @@ module RedisAssist
         redis.zcard(index_key_for(:id))
       end
 
+
+      def all
+        ids = redis.zrange(index_key_for(:id), 0, -1)
+        find(ids)
+      end
+
+
       def first(limit=1, offset=0)
         from    = offset
         to      = from + limit - 1
@@ -369,7 +376,6 @@ module RedisAssist
     def update_columns(attrs)
       redis.multi do
         attrs.each do |attr, value|
-          binding.pry
           if self.class.fields.has_key?(attr)
             write_attribute(attr, value)  
             redis.hset(key_for(:attributes), attr, self.class.transform(:to, attr, value)) unless new_record?

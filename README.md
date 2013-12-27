@@ -39,12 +39,20 @@ Create a model:
     person = Person.create(name: 'Albert Hoffman', birthday: Time.parse('1/11/1906'), meta_info: { profession: 'Scientist' })
 
 ## Updating
+With an instance
     person = Person.find(1)
     person.name = 'Hubble Love'
     person.save
 
-Currently experimental updating API. API may change to support bulk updates within a single pipeline and the ability to skip callbacks and validations.
+
+Skip callbacks / validations
+    person.update_columns(name: 'Tyler Love', birthday: Time.parse('1/11/1908'))
+    
+
+With only an id, this will hit callbacks and validations
     Person.update(1, name: 'Tyler Love')
+
+
 
 ## Validating
     person = Person.new(name: 'Albert Einstein', birthday: Time.parse('1/11/1906'), meta_info: { profession: 'Scientist' })
@@ -53,11 +61,51 @@ Currently experimental updating API. API may change to support bulk updates with
 
 
 ## Fetching
-    person = Person.Find(1)
+Find by id
+    person = Person.find(1)
 
-    # When passing an array of ids, RedisAssist will load everything using a single pipeline
+
+Find an array of people
+    # returns an array of people
     people = Person.find([1, 2])
 
+
+Find the last people
+    # Finds the last person created
+    people = People.last
+
+    # Finds the last `10` people created 
+    people = People.last(10)
+
+    # Find `10` people, offset from the end of the `id` index by `30`
+    people = People.last(10, 30)
+
+
+Find the first people
+    # Finds the first person created
+    people = People.first
+
+    # Finds the first `10` people created 
+    people = People.first(10)
+
+    # Find `10` people offset from the beginning of the `id` index by `30`
+    people = People.first(10, 30)
+
+
+Find all of the people. WARNING: If you have large data sets, you should use `find_in_batches` instead.
+    people = Person.all
+    
+
+## Find In Batches
+Works just like the ActiveRecord `find_in_batches`. The most performant way to iterate over large data sets
+    # Supports options 
+    # `batch_size` the amount of records to find in each batch. Default is `500`
+    # `offset` offset from the begining of the `id` index
+    People.find_in_batches do |people|
+      people.each do |person|
+        # do something with a person
+      end
+    end
 
 ## Deleting
 Deletes all the persisted attributes from redis.
@@ -65,7 +113,7 @@ Deletes all the persisted attributes from redis.
     person = Person.find(1)
     person.delete       # => true
 
-"Soft delete" is built into redis-assist. Simply add a deleted\_at property to your model.
+"Soft delete" is built into RedisAssist. Simply add a deleted\_at property to your model.
 
     attr_persist :deleted_at, as: :time 
 
@@ -121,6 +169,11 @@ Experimental support for has_many and belongs_to relationships.
     pet = Pet.find(1) 
     pet.person
 
+## Helpful methods
+    # The Redis client used for this module 
+    client = People.redis
+
+
 ## Transforms
 Since Redis only supports string values RedisAssist provides an interface for serialization in and out of Redis.
 
@@ -142,7 +195,8 @@ RedisAssist also provides an elegant API for defining custom transforms.
       def self.to(val)
         val.to_msgpack
       end
-    def self.from(val)
+
+      def self.from(val)
         MessagePack.unpack(val) 
       end
     end
@@ -152,6 +206,20 @@ To use the MessagePackTransform we just defined
     attr_persist :really_long_biography, as: :message_pack      
 
 
+## Useful Info
+
+RedisAssist takes advantage of redis hashes to store each persisted attribute. Using the `Person` module as an example, the fields will be stored as a Redis Hash with the key `person:[id]:attributes`. Several other design approaches were considered. This method was selected because 1) it keeps the underlying data structures flat and normalized in Redis 2) Offers Redis Hash performance benefits, as outlined here: http://redis.io/topics/memory-optimization
+
+Hundreds of millions of RedisAssist creates, updates, finds, and saves are called on bustle.com every month. 
+
+
+## In the works
+* Refactor an internal API to add more robust support for native Redis data types. Currently there is basic support for lists and hashes. We intend to add advanced support for all Redis data types.
+* Refactoring relationship support. RedisAssist relations are not an attempt to recreate SQL joins. The goal is to provide a convenient API for ordering, sorting, iterating over your data sets. It will never do everything a SQL `JOIN` will do, but it introduces many other practical ways of organizing, reading, and writing your data sets.
+* Cleanup and 1.0
+* Utilities to help with data migrations.
+* `redis_assist_index` a seperate gem that adds native support for storing your redis models in Sphinx real-time indexes. Full super advanced full-text search, facets, sorting, etc. Hit me up at `product@bustle.com` if you're interested.
+
 ## Requirements
     redis-rb
 
@@ -159,4 +227,4 @@ To use the MessagePackTransform we just defined
 ## Configuration
 You can configure RedisAssist with your own redis client
 
-    RedisAssist::Config.redis = Redis.new([...])
+    RedisAssist::Config.redis = Redis.new([connection settings...])

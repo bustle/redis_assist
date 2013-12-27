@@ -7,8 +7,7 @@ class Person < RedisAssist::Base
   attr_persist :title,            :default => "Runt"
   attr_persist :birthday,         :as => :time
   attr_persist :info,             :as => :hash
-  attr_persist :drugs,            :as => :list
-  attr_persist :smokes_weed,      :as => :boolean, :default => true
+  attr_persist :toys,             :as => :list
   attr_persist :created_at,       :as => :time 
   attr_persist :deleted_at,       :as => :time 
   attr_persist :favorite_number,  :as => :integer

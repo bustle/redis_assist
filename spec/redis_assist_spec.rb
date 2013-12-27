@@ -4,10 +4,10 @@ describe Person do
   let(:first)           { 'Bobby' }
   let(:last)            { 'Brown' }
   let(:birthday)        { Time.parse('4/10/1972') }
-  let(:drugs)           { ['heroin', 'LSD', 'Psilocybin Mushrooms'] }
-  let(:info)            { { "happy" => 'Yes', "hair" => 'Brown', "dick" => 'Big' } }
+  let(:toys)            { ['GameBoy', 'Nintendo', 'Stuffed Animal'] }
+  let(:info)            { { "happy" => 'yes', "hair" => 'Brown' } }
   let(:favorite_number) { 666 }
-  let(:attrs)           { { first: first, last: last, birthday: birthday, drugs: drugs, favorite_number: favorite_number, info: info } }
+  let(:attrs)           { { first: first, last: last, birthday: birthday, toys: toys, favorite_number: favorite_number, info: info } }
   let(:person)          { Person.new(attrs) }
 
   subject { person }
@@ -69,6 +69,20 @@ describe Person do
       it { Person.find_by_ids(["fakefuckingid"]).should eq [] }
     end
 
+    describe "#find_in_batches" do
+      it "should find batches" do
+        Person.find_in_batches(batch_size: 1) do |batch|
+          batch.should be_kind_of(Array)
+        end
+      end
+    end
+
+    describe "#all" do
+      subject { Person.all }
+
+      its(:length) { should eq Person.count }
+    end
+
     describe "#exists?" do
       subject { person }
       it      { Person.exists?(person.id).should }
@@ -91,14 +105,12 @@ describe Person do
     describe "#update" do
       before do 
         person.save
-        Person.update(person.id, last: 'Dick Brain', birthday: birthday, drugs: ['weed'], smokes_weed: false, info: { 'super' => 'cool' })
+        Person.update(person.id, last: 'Dick Brain', birthday: birthday, toys: ['matchless car'], info: { 'super' => 'cool' })
       end
 
       subject           { Person.find(person.id) }
       its(:birthday)    { should eq birthday }
       # its(:last)        { should eq 'Dick Brain' }
-      # its(:drugs)       { should eq ['weed'] }
-      # its(:smokes_weed) { should eq false }
       # its(:info)        { should eq({ 'super' => 'cool' }) }
     end
 
@@ -108,12 +120,12 @@ describe Person do
 
       before do
         person.save
-        person.update_columns(last: 'McCann', drugs: ['nope'], info: info, birthday: updated_birthday)
+        person.update_columns(last: 'McCann', toys: ['Game Genie'], info: info, birthday: updated_birthday)
       end
 
       subject         { Person.find(person.id) }
       its(:last)      { should eq 'McCann' }
-      its(:drugs)     { should eq ['nope'] }
+      its(:toys)      { should eq ['Game Genie'] }
       its(:info)      { should eq info }
       it "should transform the value"  do 
         subject.birthday.to_f.should eq updated_birthday.to_f
@@ -127,13 +139,12 @@ describe Person do
 
     its(:first)       { should eq first }
     its(:birthday)    { should eq birthday }
-    its(:drugs)       { should eq drugs }
+    its(:toys)        { should eq toys }
     its(:info)        { should eq info }
   end
 
   context "default values are respected" do
     before { person.save }
-    its(:smokes_weed) { should }
     its(:title)       { should eq "Runt" }
   end
 
