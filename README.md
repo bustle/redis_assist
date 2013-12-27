@@ -96,7 +96,8 @@ Find the first people
     people = People.first(10, 30)
 
 
-Find all of the people. WARNING: If you have large data sets, you should use `find_in_batches` instead.
+Find all of the people. 
+WARNING: If you have large data sets, you should use `find_in_batches` instead.
 
     people = Person.all
     
