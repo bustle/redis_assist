@@ -60,7 +60,7 @@ With only an id, this will hit callbacks and validations
     persin.errors       # => [{name: "Albert Einstein is dead."}]
 
 
-## Fetching
+## Finding
 Find by id
 
     person = Person.find(1)
@@ -102,7 +102,7 @@ WARNING: If you have large data sets, you should use `find_in_batches` instead.
     people = Person.all
     
 
-## Find In Batches
+## Find in batches
 Works just like the ActiveRecord `find_in_batches`. The most performant way to iterate over large data sets
 
     # Supports options 
@@ -121,7 +121,7 @@ Deletes all the persisted attributes from redis.
     person = Person.find(1)
     person.delete       # => true
 
-"Soft delete" is built into RedisAssist. Simply add a deleted\_at property to your model.
+A soft delete feature is built into RedisAssist. Simply add a deleted\_at attribute to your model.
 
     attr_persist :deleted_at, as: :time 
 
@@ -152,6 +152,7 @@ RedisAssist supports callbacks through a Rails like interface.
     def update_in_realtime_sphinx_index
       ...
     end
+
 
 ## Relationships
 Experimental support for has_many and belongs_to relationships.
