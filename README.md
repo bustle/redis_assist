@@ -1,12 +1,12 @@
 RedisAssist - Easy Redis Backed Object Modeling
 ==============================================
 
-Documentation: http://www.rubydoc.info/github/endlessinc/redis_assist/frames
 
 RedisAssist is a Persistant Object Model backed by Redis for Ruby.
 
 Store and Fetch data of any type in Redis with as little friction as possible. RedisAssist lets you back simple or complex Object Models with Redis while giving you a convenient interface interact with it.
 
+In progress RDoc: http://www.rubydoc.info/github/endlessinc/redis_assist/frames
 
 ## Getting Started
 In your Gemfile:
@@ -62,45 +62,52 @@ With only an id, this will hit callbacks and validations
 
 ## Fetching
 Find by id
+
     person = Person.find(1)
 
 
 Find an array of people
+
     # returns an array of people
     people = Person.find([1, 2])
 
 
 Find the last people
+
     # Finds the last person created
     people = People.last
 
-    # Finds the last `10` people created 
+    # Finds the last 10 people created 
     people = People.last(10)
 
-    # Find `10` people, offset from the end of the `id` index by `30`
+    # Find 10 people, offset from the end of the id index by 30
     people = People.last(10, 30)
 
 
 Find the first people
+
     # Finds the first person created
     people = People.first
 
-    # Finds the first `10` people created 
+    # Finds the first 10 people created 
     people = People.first(10)
 
-    # Find `10` people offset from the beginning of the `id` index by `30`
+    # Find 10 people offset from the beginning of the id index by 30
     people = People.first(10, 30)
 
 
 Find all of the people. WARNING: If you have large data sets, you should use `find_in_batches` instead.
+
     people = Person.all
     
 
 ## Find In Batches
 Works just like the ActiveRecord `find_in_batches`. The most performant way to iterate over large data sets
+
     # Supports options 
     # `batch_size` the amount of records to find in each batch. Default is `500`
     # `offset` offset from the begining of the `id` index
+
     People.find_in_batches do |people|
       people.each do |person|
         # do something with a person
@@ -170,8 +177,14 @@ Experimental support for has_many and belongs_to relationships.
     pet.person
 
 ## Helpful methods
-    # The Redis client used for this module 
+
+The Redis client used for the class
+
     client = People.redis
+
+Rename an attribute    
+
+    RedisAssist::Utils.rename_attribute(model: Person, from: :name, to: :full_name)
 
 
 ## Transforms
@@ -221,6 +234,7 @@ Hundreds of millions of RedisAssist creates, updates, finds, and saves are calle
 * `redis_assist_index` a seperate gem that adds native support for storing your redis models in Sphinx real-time indexes. Full super advanced full-text search, facets, sorting, etc. Hit me up at `product@bustle.com` if you're interested.
 
 ## Requirements
+
     redis-rb
 
 
