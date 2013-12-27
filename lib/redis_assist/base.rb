@@ -238,7 +238,7 @@ module RedisAssist
       
 
       def hash_to_redis(obj)
-        obj.each_with_object([]) {|kv,args| args<<kv[0]<<kv[1] }
+        obj.each_with_object([]) {|kv,args| args << kv[0] << kv[1] }
       end
 
 
@@ -369,6 +369,7 @@ module RedisAssist
     def update_columns(attrs)
       redis.multi do
         attrs.each do |attr, value|
+          binding.pry
           if self.class.fields.has_key?(attr)
             write_attribute(attr, value)  
             redis.hset(key_for(:attributes), attr, self.class.transform(:to, attr, value)) unless new_record?
@@ -495,8 +496,12 @@ module RedisAssist
     def redis
       self.class.redis
     end
- 
-  
+   
+
+    def key_for(attribute)
+      self.class.key_for(id, attribute)
+    end
+
 
     protected 
   
@@ -519,11 +524,7 @@ module RedisAssist
     def generate_id
       redis.incr("#{self.class.key_prefix}:id_sequence")
     end
-  
-    def key_for(attribute)
-      self.class.key_for(id, attribute)
-    end
-  
+   
     def load_attributes(raw_attributes)
       return nil unless raw_attributes
       self.lists      = raw_attributes[:lists] 
