@@ -8,6 +8,7 @@ require 'redis_assist/transform'
 require 'redis_assist/callbacks'
 require 'redis_assist/validations'
 require 'redis_assist/associations'
+require 'redis_assist/finders'
 require 'redis_assist/base'
 require 'redis_assist/utils'
 

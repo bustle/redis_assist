@@ -4,6 +4,10 @@ module RedisAssist
     include Callbacks
     include Validations
     include Associations
+
+
+    extend RedisAssist::Finders
+
   
     def self.inherited(base)
       base.before_create {|record| record.send(:created_at=, Time.now.to_f) if record.respond_to?(:created_at) }
@@ -32,87 +36,11 @@ module RedisAssist
       def count
         redis.zcard(index_key_for(:id))
       end
-
-
-      def all
-        ids = redis.zrange(index_key_for(:id), 0, -1)
-        find(ids)
-      end
-
-
-      def first(limit=1, offset=0)
-        from    = offset
-        to      = from + limit - 1
-        members = redis.zrange(index_key_for(:id), from, to)
-
-        find(limit > 1 ? members : members.first)
-      end
-
-
-      def last(limit=1, offset=0)
-        from    = offset
-        to      = from + limit - 1
-        members = redis.zrange(index_key_for(:id), (to * -1) + -1, (from * -1) + -1).reverse
-
-        find(limit > 1 ? members : members.first)
-      end
-
-
-      def find(ids, opts={})
-        ids.is_a?(Array) ? find_by_ids(ids, opts) : find_by_id(ids, opts)
-      end
-
-
-      # find articles in batches
-      def find_in_batches(params={})
-        start       = params[:start]      || 0
-        marker      = start
-        batch_size  = params[:batch_size] || 500
-        record_ids  = redis.zrange(index_key_for(:id), marker, marker + batch_size - 1)
-
-        while record_ids.length > 0
-          records_count   = record_ids.length
-          marker          += records_count
-          records         = find(record_ids)
-
-          yield records
-
-          break if records_count < batch_size
-
-          record_ids = redis.zrange(index_key_for(:id), marker, marker + batch_size - 1)
-        end
-      end
-
-
-      # Deprecated finds
-      def find_by_id(id, opts={})
-        raw_attributes = load_attributes(id)
-        return nil unless raw_attributes[id][:exists].value
-        obj = new(id: id, raw_attributes: raw_attributes[id])
-        (obj.deleted? && !opts[:deleted].eql?(true)) ? nil : obj
-      end
-  
-
-      def find_by_ids(ids, opts={})
-        attrs = load_attributes(*ids)
-        raw_attributes = attrs
-        ids.each_with_object([]) do |id, instances| 
-          if raw_attributes[id][:exists].value
-            instance = new(id: id, raw_attributes: raw_attributes[id])
-            instances << instance if instance && (!instance.deleted? || opts[:deleted].eql?(true))
-          end
-        end
-      end
   
 
       def create(attrs={})
         roll = new(attrs)
         roll.save ? roll : false
-      end
-
-
-      def exists?(id)
-        redis.exists(key_for(id, :attributes))      
       end
 
 
