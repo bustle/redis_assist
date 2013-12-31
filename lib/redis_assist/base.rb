@@ -509,6 +509,12 @@ module RedisAssist
     end
 
 
+    def inspect
+      attr_list = self.class.persisted_attrs.map{|key,val| "#{key}: #{send(key).to_s[0, 200]}" } * ", "
+      "#<#{self.class.name} id: #{id}, #{attr_list}>"
+    end
+
+
     protected 
   
   

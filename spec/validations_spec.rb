@@ -33,7 +33,7 @@ describe FakePerson do
 
 
     its(:valid?)  { should_not }
-    its(:errors)  { subject.length.should > 0 } 
+    its(:errors)  { subject.errors.length.should > 0 } 
   end
 
   context "invalid presence" do
@@ -43,6 +43,6 @@ describe FakePerson do
     end
 
     its(:valid?)  { should_not }
-    its(:errors)  { subject.length.should > 0 } 
+    its(:errors)  { subject.errors.length.should > 0 } 
   end
 end

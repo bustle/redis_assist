@@ -7,10 +7,10 @@ describe Person do
   let(:first)           { 'Bobby' }
   let(:last)            { 'Brown' }
   let(:birthday)        { Time.parse('4/10/1972') }
-  let(:drugs)           { ['heroin', 'LSD', 'Psilocybin Mushrooms'] }
+  let(:toys)            { ['cars', 'bikes', 'dolls'] }
   let(:info)            { { "happy" => 'Yes', "hair" => 'Brown', "dick" => 'Big' } }
   let(:favorite_number) { 666 }
-  let(:attrs)           { { first: first, last: last, birthday: birthday, drugs: drugs, favorite_number: favorite_number, info: info } }
+  let(:attrs)           { { first: first, last: last, birthday: birthday, toys: toys, favorite_number: favorite_number, info: info } }
   let(:person)          { Person.new(attrs) }
 
   before  { person.save }

@@ -25,9 +25,8 @@ describe Person do
   end
 
   describe "#has_many" do
-    subject       { person }
-    its(:pets)    { subject.length.should eq 2 }
-    its(:pet_ids) { subject.inspect; subject.length.should eq 2 }
+    subject       { person.pets }
+    its(:length)  { should eq 2 }
   end
 
   describe "#belongs_to" do
@@ -36,8 +35,8 @@ describe Person do
     its(:person_id) { should eq person.id }
     it "should find the same person" do
       cat = Pet.find(oliver.id)
-      cat.person.should eq person
-      cat.person_id.shoud eq person.id
+      cat.person.id.should eq person.id
+      cat.person_id.should eq person.id
     end
   end
 end
