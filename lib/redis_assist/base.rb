@@ -31,6 +31,27 @@ module RedisAssist
         end
       end
 
+      def attr_sorted_set(name)
+        define_attr_type(name, RedisAssist::SortedSet)
+      end
+
+      def attr_list(name)
+        define_attr_type(name, RedisAssist::List)
+      end
+
+      def attr_set(name)
+        define_attr_type(name, RedisAssist::Set)
+      end
+
+      def attr_hash(name)
+        define_attr_type(name, RedisAssist::Hash)
+      end
+
+      def attr_string(name)
+        define_attr_type(name, RedisAssist::String)
+      end
+
+
 
       # Get count of records
       def count
@@ -110,6 +131,11 @@ module RedisAssist
         @persisted_attrs ||= {}
       end
 
+      def new_persisted_attrs
+        return @new_persisted_attrs if @new_persisted_attrs
+        @new_persisted_attrs ||= []
+      end
+
 
       def index_key_for(index_name)
         "#{key_prefix}:index:#{index_name}"
@@ -180,6 +206,19 @@ module RedisAssist
       private
 
 
+      def define_attr_type(name, type)
+        define_method(name) do
+          inst_var = instance_variable_get("@_#{name}")
+
+          unless inst_var
+            instance_variable_set "@_#{name}", type.new(key: key_for(name))
+          end
+
+          inst_var
+        end
+      end
+
+
       def define_list(name)
         define_method(name) do
           read_list(name)
@@ -248,7 +287,7 @@ module RedisAssist
     def read_attribute(name)
       if attributes.is_a?(Redis::Future)
         value = attributes.value 
-        self.attributes = value ? Hash[*self.class.fields.keys.zip(value).flatten] : {}
+        self.attributes = value ? ::Hash[*self.class.fields.keys.zip(value).flatten] : {}
       end
 
       self.class.transform(:from, name, attributes[name])
@@ -292,7 +331,7 @@ module RedisAssist
 
     # Transform and write a hash attribute 
     def write_hash(name, val)
-      raise "RedisAssist: tried to store a #{val.class.name} as Hash" unless val.is_a?(Hash)
+      raise "RedisAssist: tried to store a #{val.class.name} as Hash" unless val.is_a?(::Hash)
       hashes[name] = val
     end
   

@@ -10,8 +10,6 @@ describe Person do
   let(:attrs)           { { first: first, last: last, birthday: birthday, toys: toys, favorite_number: favorite_number, info: info } }
   let(:person)          { Person.new(attrs) }
 
-  subject { person }
-
   context "saving" do
     describe "#create" do
       let(:person)  { Person.create(attrs) }

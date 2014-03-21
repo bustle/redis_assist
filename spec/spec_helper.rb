@@ -12,6 +12,9 @@ class Person < RedisAssist::Base
   attr_persist :deleted_at,       :as => :time 
   attr_persist :favorite_number,  :as => :integer
 
+  attr_set        :login_dates
+  attr_sorted_set :gamescores
+
   has_many :cats
 
   def validate
