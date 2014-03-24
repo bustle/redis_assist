@@ -1,5 +1,7 @@
+require 'pry'
 module RedisAssist
   class Base
+
 
     include Callbacks
     include Validations
@@ -18,30 +20,46 @@ module RedisAssist
 
     class << self
 
-
-      def redis_persist(name, opts={})
-        options = { 
+      def redis_persist(name, **kwargs)
+        options = {
+          as:       :string,
+          preload:  true,
+          default:  nil,
           read: proc {|record|
             if record.attributes.is_a?(Redis::Future)
               value = record.attributes.value 
-              record.attributes = value ? ::Hash[*fields.keys.zip(value).flatten] : {}
+              record.attributes = value ? ::Hash[*preloadable_attributes.keys.zip(value).flatten] : {}
             end
 
-            transform(:from, name, record.attributes[name])
-          }, 
+            record.attributes[name]
+          },
           write: proc {|record, val|
             if record.attributes.is_a?(Redis::Future)
               value = record.attributes.value 
-              record.attributes = value ? ::Hash[*fields.keys.zip(value).flatten] : {}
+              record.attributes = value ? ::Hash[*preloadable_attributes.keys.zip(value).flatten] : {}
             end
 
-            record.attributes[name] = transform(:to, name, val)
-          }
-        }.merge(opts)
+            record.attributes[name] = val
+          } 
+        }.merge(kwargs)
 
-        persisted_attrs[name] = options
+        redis_computed(name, options)
+      end
 
-        define_attribute(name: name, read: options[:read], write: options[:write])
+      def redis_computed(name, as: :string, read: nil, write: nil, preload: false, **options)
+        computed_attributes[name] = options.merge(as: as, preload: preload, read: read, write: write)
+
+        if read
+          define_method(name) do |*args|
+            read_attribute(name, *args, &read)
+          end
+        end
+  
+        if write
+          define_method("#{name}=") do |val, *args| 
+            write_attribute(name, val, *args, &write)
+          end
+        end
       end
 
       def redis_sorted_set(name)
@@ -89,7 +107,7 @@ module RedisAssist
 
         redis.multi do
           params.each do |attr, val|
-            if persisted_attrs.include?(attr)
+            if computed_attributes.include?(attr)
               Hash.hset(key_for(id, :attributes), attr, transform(:to, attr, val)) 
             end
           end
@@ -101,18 +119,21 @@ module RedisAssist
 
 
       def transform(direction, attr, val)
-        transformer = RedisAssist.transforms[persisted_attrs[attr][:as]]
+        transformer = RedisAssist.transforms[computed_attributes[attr][:as]]
 
         if transformer
           transformer.transform(direction, val)
         else
-          val || persisted_attrs[attr][:default]
+          val || computed_attributes[attr][:default]
         end
       end
 
+      def computed_attributes
+        @computed_attributes ||= {}
+      end
 
-      def fields
-        persisted_attrs
+      def preloadable_attributes
+        computed_attributes.select{|k,v| v[:preload].eql?(true) }
       end
   
 
@@ -126,10 +147,10 @@ module RedisAssist
       # end
 
 
-      # TODO: Attribute class
-      def persisted_attrs
-        @persisted_attrs ||= {}
-      end
+      # # TODO: Attribute class
+      # def persisted_attrs
+      #   @persisted_attrs ||= {}
+      # end
 
       def redis_attrs
         @redis_attrs ||= []
@@ -172,7 +193,7 @@ module RedisAssist
           ids.each_with_object(future_attrs) do |id, futures|
             future_fields = nil
    
-            future_fields = pipe.hmget(key_for(id, :attributes), persisted_attrs.keys)
+            future_fields = pipe.hmget(key_for(id, :attributes), preloadable_attributes.keys)
 
             futures[id] = { 
               fields: future_fields, 
@@ -207,17 +228,6 @@ module RedisAssist
 
         redis_attrs << name
       end
-
-
-      def define_attribute(name: nil, read: nil, write: nil)
-        define_method(name) do 
-          read_attribute(name)
-        end
-  
-        define_method("#{name}=") do |val| 
-          write_attribute(name, val)
-        end
-      end
     end
   
 
@@ -240,7 +250,7 @@ module RedisAssist
   
       invoke_callback(:on_load)
   
-      self.class.persisted_attrs.keys.each do |name|
+      self.class.preloadable_attributes.keys.each do |name|
         send("#{name}=", attrs[name]) if attrs[name]
         attrs.delete(name)
       end
@@ -251,14 +261,22 @@ module RedisAssist
 
     # Transform and read a standard attribute
     def read_attribute(name)
-      attr_opts = self.class.persisted_attrs[name]
-      attr_opts[:read].call(self) if attr_opts && attr_opts[:read]
+      attr_opts = self.class.computed_attributes[name]
+      if attr_opts && attr_opts[:read] 
+        binding.pry if name.eql? :last_login_at
+
+        val = self.class.transform(:from, name, attr_opts[:read].call(self))
+        val ? val : attr_opts[:default]
+      end
     end
 
     # Transform and write a standard attribute value
     def write_attribute(name, val)
-      attr_opts = self.class.persisted_attrs[name]
-      attr_opts[:write].call(self, val) if attr_opts && attr_opts[:write]
+      attr_opts = self.class.computed_attributes[name]
+      if attr_opts && attr_opts[:write]
+        attr_opts[:write].call(self, self.class.transform(:to, name, val)) 
+        val
+      end
     end
 
   
@@ -271,7 +289,7 @@ module RedisAssist
     def update_columns(attrs)
       redis.multi do
         attrs.each do |attr, value|
-          if self.class.fields.has_key?(attr)
+          if self.class.preloadable_attributes.has_key?(attr)
             write_attribute(attr, value)  
             redis.hset(key_for(:attributes), attr, self.class.transform(:to, attr, value)) unless new_record?
           end
@@ -374,7 +392,7 @@ module RedisAssist
 
 
     def inspect
-      attr_list = self.class.persisted_attrs.map{|key,val| "#{key}: #{send(key).to_s[0, 200]}" } * ", "
+      attr_list = self.class.preloadable_attributes.map{|key,val| key } * ", "
       "#<#{self.class.name} id: #{id}, #{attr_list}>"
     end
 

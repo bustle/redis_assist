@@ -1,4 +1,3 @@
-require 'pry'
 module RedisAssist
   module Associations
     def self.included(base)
@@ -60,8 +59,12 @@ module RedisAssist
             current_records = [record]
           end
 
-          length = send("#{singular_name}_ids").zcard
+          length = send("#{singular_name}_count")
           send("#{singular_name}_ids").zadd length, record.id
+        end
+
+        define_method("#{singular_name}_count") do
+          send("#{singular_name}_ids").zcard
         end
       end
 

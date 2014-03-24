@@ -11,7 +11,7 @@ describe Person do
   context "saving" do
     describe "#create" do
       let(:person)  { Person.create(attrs) }
-      subject       { person }
+      subject       { binding.pry; person }
       its(:id)      { should }
       it            { subject.new_record?.should_not }
     end

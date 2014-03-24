@@ -39,4 +39,9 @@ describe Person do
       cat.person_id.should eq person.id
     end
   end
+
+  describe "#pet_count" do
+    subject { person }
+    its(:pet_count) { should eq 2 }
+  end
 end

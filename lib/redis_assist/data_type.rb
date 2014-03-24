@@ -28,9 +28,9 @@ module RedisAssist
 
     attr_accessor :key
 
-    def initialize(key: key )
+    def initialize(key: key)
       raise "RedisAssist: you must provide a key" unless key 
-      self.key      = key
+      self.key = key
     end
 
     def client
