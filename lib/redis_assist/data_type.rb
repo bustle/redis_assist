@@ -20,6 +20,10 @@ module RedisAssist
       def client
         RedisAssist::Config.redis_client
       end
+
+      def execute(command, *args)
+        client.send(command, *args)
+      end
     end
 
     attr_accessor :key
@@ -33,8 +37,8 @@ module RedisAssist
       self.class.client
     end
 
-    def execute(command, *args)
-      client.send(command, *args)
+    def execute(*args)
+      self.class.execute(*args)
     end
   end
 

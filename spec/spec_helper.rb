@@ -2,18 +2,16 @@ require 'pry'
 require 'redis_assist'
 
 class Person < RedisAssist::Base
-  attr_persist :first
-  attr_persist :last
-  attr_persist :title,            :default => "Runt"
-  attr_persist :birthday,         :as => :time
-  attr_persist :info,             :as => :hash
-  attr_persist :toys,             :as => :list
-  attr_persist :created_at,       :as => :time 
-  attr_persist :deleted_at,       :as => :time 
-  attr_persist :favorite_number,  :as => :integer
+  redis_persist    :first
+  redis_persist    :last
+  redis_persist    :title,            :default => "Runt"
+  redis_persist    :birthday,         :as => :time
+  redis_persist    :created_at,       :as => :time 
+  redis_persist    :deleted_at,       :as => :time 
+  redis_persist    :favorite_number,  :as => :integer
 
-  attr_set        :login_dates
-  attr_sorted_set :gamescores
+  redis_hash       :info
+  redis_list       :login_dates
 
   has_many :cats
 
@@ -23,15 +21,15 @@ class Person < RedisAssist::Base
 end
 
 class Cat < RedisAssist::Base
-  attr_persist  :name
-  belongs_to    :person
+  redis_persist   :name
+  belongs_to      :person
 end
 
 class TestModel < RedisAssist::Base
-  attr_persist :truthy, as: :boolean
-  attr_persist :floaty, as: :float
-  attr_persist :mathy,  as: :integer
-  attr_persist :parsy,  as: :json
-  attr_persist :timing, as: :time
+  redis_persist :truthy, as: :boolean
+  redis_persist :floaty, as: :float
+  redis_persist :mathy,  as: :integer
+  redis_persist :parsy,  as: :json
+  redis_persist :timing, as: :time
 end
 

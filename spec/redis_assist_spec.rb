@@ -4,10 +4,8 @@ describe Person do
   let(:first)           { 'Bobby' }
   let(:last)            { 'Brown' }
   let(:birthday)        { Time.parse('4/10/1972') }
-  let(:toys)            { ['GameBoy', 'Nintendo', 'Stuffed Animal'] }
-  let(:info)            { { "happy" => 'yes', "hair" => 'Brown' } }
   let(:favorite_number) { 666 }
-  let(:attrs)           { { first: first, last: last, birthday: birthday, toys: toys, favorite_number: favorite_number, info: info } }
+  let(:attrs)           { { first: first, last: last, birthday: birthday, favorite_number: favorite_number } }
   let(:person)          { Person.new(attrs) }
 
   context "saving" do
@@ -103,28 +101,24 @@ describe Person do
     describe "#update" do
       before do 
         person.save
-        Person.update(person.id, last: 'Dick Brain', birthday: birthday, toys: ['matchless car'], info: { 'super' => 'cool' })
+        Person.update(person.id, last: 'Dick Brain', birthday: birthday)
       end
 
       subject           { Person.find(person.id) }
       its(:birthday)    { should eq birthday }
-      # its(:last)        { should eq 'Dick Brain' }
-      # its(:info)        { should eq({ 'super' => 'cool' }) }
+      its(:last)        { should eq 'Dick Brain' }
     end
 
     describe ".update_columns" do
-      let(:info)              { { 'super' => 'not cool' } }
       let(:updated_birthday)  { Time.now }
 
       before do
         person.save
-        person.update_columns(last: 'McCann', toys: ['Game Genie'], info: info, birthday: updated_birthday)
+        person.update_columns(last: 'McCann', birthday: updated_birthday)
       end
 
       subject         { Person.find(person.id) }
       its(:last)      { should eq 'McCann' }
-      its(:toys)      { should eq ['Game Genie'] }
-      its(:info)      { should eq info }
       it "should transform the value"  do 
         subject.birthday.to_f.should eq updated_birthday.to_f
       end
@@ -137,8 +131,6 @@ describe Person do
 
     its(:first)       { should eq first }
     its(:birthday)    { should eq birthday }
-    its(:toys)        { should eq toys }
-    its(:info)        { should eq info }
   end
 
   context "default values are respected" do

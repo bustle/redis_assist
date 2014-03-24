@@ -1,3 +1,4 @@
+require 'pry'
 module RedisAssist
   module Associations
     def self.included(base)
@@ -19,13 +20,26 @@ module RedisAssist
         singular_name = StringHelper.singularize(name)
         class_name    = opts[:class_name] ? opts[:class_name] : StringHelper.camelize(singular_name)
 
-        attr_persist("#{singular_name}_ids".to_sym, as: :list, default: [])
+        # redis_persist("#{singular_name}_ids".to_sym, as: :list, default: [])
+        redis_sorted_set("#{singular_name}_ids".to_sym)
 
-        define_method(name) do
+        redis_persist name.to_sym,
+          read: proc {|record|
+          },
+          write: proc {|record,val|
+          } 
+
+        define_method(name) do |opts={}|
+          options = {
+            limit:  0,
+            offset: 0
+          }.merge(opts)
+
+
           klass       = Module.const_get(class_name)
           records     = instance_variable_get("@_#{name}")
           return      records if records
-          record_ids  = send("#{singular_name}_ids")
+          record_ids  = send("#{singular_name}_ids").zrange(options[:offset],options[:limit]-1)
           records     = klass.find(record_ids)
 
           instance_variable_set("@_#{name}", records)
@@ -52,13 +66,14 @@ module RedisAssist
             current_records = [record]
           end
 
-          send("#{singular_name}_ids") << record.id
+          length = send("#{singular_name}_ids").zcard
+          send("#{singular_name}_ids").zadd length, record.id
         end
       end
 
       def define_belongs_to(name, opts={})
         class_name = opts[:class_name] ? opts[:class_name] : StringHelper.camelize(name)
-        attr_persist("#{name}_id".to_sym, as: :integer, default: nil)
+        redis_persist("#{name}_id".to_sym, as: :integer, default: nil)
 
         define_method(name) do
           klass = Module.const_get(class_name)

@@ -1,12 +1,12 @@
 require 'redis_assist'
 
 class Person < RedisAssist::Base
-  attr_persist  :name
+  redis_persist :name
   has_many      :pets
 end
 
 class Pet < RedisAssist::Base
-  attr_persist  :name
+  redis_persist :name
   belongs_to    :person
 end
 
@@ -25,7 +25,7 @@ describe Person do
   end
 
   describe "#has_many" do
-    subject       { person.pets }
+    subject       { binding.pry; person.pets }
     its(:length)  { should eq 2 }
   end
 
