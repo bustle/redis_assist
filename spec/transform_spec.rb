@@ -4,11 +4,11 @@ require 'redis_assist'
 class TestTransform < RedisAssist::Transform; end
 
 class TestModel < RedisAssist::Base
-  attr_persist :truthy, as: :boolean
-  attr_persist :floaty, as: :float
-  attr_persist :mathy,  as: :integer
-  attr_persist :parsy,  as: :json
-  attr_persist :timing, as: :time
+  redis_persist :truthy, as: :boolean
+  redis_persist :floaty, as: :float
+  redis_persist :mathy,  as: :integer
+  redis_persist :parsy,  as: :json
+  redis_persist :timing, as: :time
 end
 
 describe TestTransform do

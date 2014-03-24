@@ -90,20 +90,7 @@ module RedisAssist
         redis.multi do
           params.each do |attr, val|
             if persisted_attrs.include?(attr)
-              if fields.keys.include? attr
-                transform(:to, attr, val)
-                Hash.hset(key_for(id, :attributes), attr, transform(:to, attr, val)) 
-              end
-
-              # if lists.keys.include? attr
-              #   Hash.del(key_for(id, attr)) 
-              #   Hash.rpush(key_for(id, attr), val) unless val.empty?
-              # end
-
-              # if hashes.keys.include? attr
-              #   Hash.del(key_for(id, attr))
-              #   Hash.hmset(key_for(id, attr), *hash_to_redis(val))
-              # end
+              Hash.hset(key_for(id, :attributes), attr, transform(:to, attr, val)) 
             end
           end
         end
@@ -144,9 +131,8 @@ module RedisAssist
         @persisted_attrs ||= {}
       end
 
-      def new_persisted_attrs
-        return @new_persisted_attrs if @new_persisted_attrs
-        @new_persisted_attrs ||= []
+      def redis_attrs
+        @redis_attrs ||= []
       end
 
 
@@ -184,23 +170,11 @@ module RedisAssist
         # Load all the futures into an organized Hash
         redis.pipelined do |pipe|
           ids.each_with_object(future_attrs) do |id, futures|
-            # future_lists  = {}
-            # future_hashes = {}
             future_fields = nil
-  
-            # lists.each do |name, opts|
-            #   future_lists[name]  = pipe.lrange(key_for(id, name), 0, -1)
-            # end
-  
-            # hashes.each do |name, opts|
-            #   future_hashes[name] = pipe.hgetall(key_for(id, name))
-            # end
-  
+   
             future_fields = pipe.hmget(key_for(id, :attributes), persisted_attrs.keys)
 
             futures[id] = { 
-              # lists:  future_lists, 
-              # hashes: future_hashes, 
               fields: future_fields, 
               exists: pipe.exists(key_for(id, :attributes))
             } 
@@ -230,29 +204,9 @@ module RedisAssist
 
           inst_var
         end
+
+        redis_attrs << name
       end
-
-
-      # def define_list(name)
-      #   define_method(name) do
-      #     read_list(name)
-      #   end
-  
-      #   define_method("#{name}=") do |val|
-      #     write_list(name, val)
-      #   end
-      # end
-
-
-      # def define_hash(name)
-      #   define_method(name) do
-      #     read_hash(name)
-      #   end
-  
-      #   define_method("#{name}=") do |val|
-      #     write_hash(name, val)
-      #   end
-      # end
 
 
       def define_attribute(name: nil, read: nil, write: nil)
@@ -274,9 +228,7 @@ module RedisAssist
     end
     
     def initialize(attrs={})
-      self.attributes = {}
-      # self.lists      = {}
-      # self.hashes     = {}
+      self.attributes   = {}
   
       if attrs[:id]
         self.id = attrs[:id]
@@ -309,46 +261,11 @@ module RedisAssist
       attr_opts[:write].call(self, val) if attr_opts && attr_opts[:write]
     end
 
-    # # Transform and read a list attribute
-    # def read_list(name)
-    #   opts = self.class.persisted_attrs[name]
-
-    #   if !lists[name] && opts[:default]
-    #     opts[:default]
-    #   else
-    #     send("#{name}=", lists[name].value) if lists[name].is_a?(Redis::Future)
-    #     lists[name]
-    #   end
-    # end
-
-    # # Transform and read a hash attribute
-    # def read_hash(name)
-    #   opts = self.class.persisted_attrs[name]
-
-    #   if !hashes[name] && opts[:default]
-    #     opts[:default]
-    #   else
-    #     self.send("#{name}=", hashes[name].value) if hashes[name].is_a?(Redis::Future)
-    #     hashes[name]
-    #   end
-    # end
-
-
-    # # Transform and write a list value
-    # def write_list(name, val)
-    #   raise "RedisAssist: tried to store a #{val.class.name} as Array" unless val.is_a?(Array)
-    #   lists[name] = val
-    # end
-
-    # # Transform and write a hash attribute 
-    # def write_hash(name, val)
-    #   raise "RedisAssist: tried to store a #{val.class.name} as Hash" unless val.is_a?(::Hash)
-    #   hashes[name] = val
-    # end
   
     def saved?
       !!(new_record?.eql?(false) && id)
     end
+
 
     # Update fields without hitting the callbacks
     def update_columns(attrs)
@@ -358,24 +275,6 @@ module RedisAssist
             write_attribute(attr, value)  
             redis.hset(key_for(:attributes), attr, self.class.transform(:to, attr, value)) unless new_record?
           end
-
-          # if self.class.lists.has_key?(attr)
-          #   write_list(attr, value)       
-
-          #   unless new_record?
-          #     redis.del(key_for(attr))
-          #     redis.rpush(key_for(attr), value) unless value.empty?
-          #   end
-          # end
-
-          # if self.class.hashes.has_key?(attr)
-          #   write_hash(attr, value)       
-
-          #   unless new_record?
-          #     hash_as_args = hash_to_redis(value)
-          #     redis.hmset(key_for(attr), *hash_as_args)
-          #   end
-          # end
         end
       end
     end
@@ -406,20 +305,6 @@ module RedisAssist
           attribute_args = hash_to_redis(attributes)
           redis.hmset(key_for(:attributes), *attribute_args)
         end
-  
-        # lists.each do |name, val|
-        #   if val && !val.is_a?(Redis::Future) 
-        #     redis.del(key_for(name))
-        #     redis.rpush(key_for(name), val) unless val.empty?
-        #   end
-        # end
-  
-        # hashes.each do |name, val|
-        #   unless val.is_a?(Redis::Future)
-        #     hash_as_args = hash_to_redis(val)
-        #     redis.hmset(key_for(name), *hash_as_args)
-        #   end
-        # end
       end
 
       invoke_callback(:after_save)
@@ -452,15 +337,16 @@ module RedisAssist
       else
         redis.multi do
           redis.del(key_for(:attributes))
-          # lists.merge(hashes).each do |name|
-          #   redis.del(key_for(name))
-          # end
+          self.class.redis_attrs.each do |name|
+            redis.del(key_for(name))
+          end
         end
       end
 
       remove_from_index(:id, id)
 
       invoke_callback(:after_delete)
+
       self
     end
 
@@ -517,9 +403,7 @@ module RedisAssist
    
     def load_attributes(raw_attributes)
       return nil unless raw_attributes
-      # self.lists      = raw_attributes[:lists] 
-      # self.hashes     = raw_attributes[:hashes] 
-      self.attributes = raw_attributes[:fields]
+      self.attributes   = raw_attributes[:fields]
       self.new_record = false
     end
   

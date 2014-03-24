@@ -23,12 +23,6 @@ module RedisAssist
         # redis_persist("#{singular_name}_ids".to_sym, as: :list, default: [])
         redis_sorted_set("#{singular_name}_ids".to_sym)
 
-        redis_persist name.to_sym,
-          read: proc {|record|
-          },
-          write: proc {|record,val|
-          } 
-
         define_method(name) do |opts={}|
           options = {
             limit:  0,
@@ -45,9 +39,9 @@ module RedisAssist
           instance_variable_set("@_#{name}", records)
         end
 
-        define_method("#{name}=") do |records|
-          instance_variable_set("@_#{name}", records.collect(&:id))
-        end
+        # define_method("#{name}=") do |records|
+        #   instance_variable_set("@_#{name}", records.collect(&:id))
+        # end
 
         define_method("add_#{singular_name}") do |record|
           current_records = instance_variable_get("@_#{name}")

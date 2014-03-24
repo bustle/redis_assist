@@ -25,7 +25,7 @@ describe Person do
   end
 
   describe "#has_many" do
-    subject       { binding.pry; person.pets }
+    subject       { person.pets }
     its(:length)  { should eq 2 }
   end
 
