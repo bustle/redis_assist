@@ -28,7 +28,6 @@ module RedisAssist
             offset: 0
           }.merge(opts)
 
-
           klass       = Module.const_get(class_name)
           records     = instance_variable_get("@_#{name}")
           return      records if records

@@ -12,13 +12,14 @@ module RedisAssist
 
   
     def self.inherited(base)
+      base.extend ClassMethods
       base.before_create {|record| record.send(:created_at=, Time.now.to_f) if record.respond_to?(:created_at) }
       base.before_update {|record| record.send(:updated_at=, Time.now.to_f) if record.respond_to?(:updated_at) }
       base.after_create  {|record| record.send(:new_record=, false) }
     end
  
 
-    class << self
+    module ClassMethods
 
       def redis_persist(name, **kwargs)
         options = {
@@ -128,34 +129,16 @@ module RedisAssist
         end
       end
 
+
       def computed_attributes
         @computed_attributes ||= {}
       end
 
+
       def preloadable_attributes
         computed_attributes.select{|k,v| v[:preload].eql?(true) }
       end
-  
-
-      # def lists 
-      #   persisted_attrs.select{|k,v| v[:as].eql?(:list) }
-      # end
-  
-
-      # def hashes 
-      #   persisted_attrs.select{|k,v| v[:as].eql?(:hash) }
-      # end
-
-
-      # # TODO: Attribute class
-      # def persisted_attrs
-      #   @persisted_attrs ||= {}
-      # end
-
-      def redis_attrs
-        @redis_attrs ||= []
-      end
-
+ 
 
       def index_key_for(index_name)
         "#{key_prefix}:index:#{index_name}"
@@ -225,8 +208,6 @@ module RedisAssist
 
           inst_var
         end
-
-        redis_attrs << name
       end
     end
   
@@ -355,7 +336,7 @@ module RedisAssist
       else
         redis.multi do
           redis.del(key_for(:attributes))
-          self.class.redis_attrs.each do |name|
+          self.class.computed_attributes.each do |name|
             redis.del(key_for(name))
           end
         end

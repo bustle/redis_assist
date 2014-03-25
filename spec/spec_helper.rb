@@ -20,7 +20,7 @@ class Person < RedisAssist::Base
     write:  proc{|record, val|  record.login_log.lpush(val) }
 
   redis_computed :latest_event,
-    read:   proc{|record, name| record.latest_event.zrange(-1,-1).first },
+    read:   proc{|record|       record.latest_event.zrange(-1,-1).first },
     write:  proc{|record, val|  record.latest_event.zadd(Time.now.to_i, val) }
 
   has_many :cats
