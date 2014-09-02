@@ -40,18 +40,18 @@ Create a model:
 
 ## Updating
 With an instance
+
     person = Person.find(1)
     person.name = 'Hubble Love'
     person.save
 
-
 Skip callbacks / validations
+
     person.update_columns(name: 'Tyler Love', birthday: Time.parse('1/11/1908'))
-    
 
 With only an id, this will hit callbacks and validations
-    Person.update(1, name: 'Tyler Love')
 
+    Person.update(1, name: 'Tyler Love')
 
 
 ## Validating
