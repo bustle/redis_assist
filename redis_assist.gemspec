@@ -10,17 +10,18 @@ Gem::Specification.new do |s|
   s.authors     = ["Tyler Love"]
   s.email       = ["t@tylr.org"]
   s.homepage    = "http://github.com/endlessinc/redis_assist"
-  s.summary     = %q{Persistant object oriented programming with redis}
-  s.description = %q{Redis persistant object oriented programming}
+  s.summary     = %q{A framework for Redis backed ruby apps.}
+  s.description = %q{A framework for Redis backed ruby apps.}
 
   s.rubyforge_project         = "redis_assist"
 
-  s.add_dependency('redis', "~> 3.0.4")
-  s.add_development_dependency 'bundler', '~> 1.3.5'
-  s.add_development_dependency 'rake', '~> 10.1.0'
-  s.add_development_dependency 'yard', '~> 0.8.6.1'
-  s.add_development_dependency 'rspec', '~> 2.3'
-  s.add_development_dependency 'pry'
+  s.add_dependency('redis', "~> 3.1.0")
+
+  s.add_development_dependency 'bundler',   '~> 1.5.3'
+  s.add_development_dependency 'rake',      '~> 10.1.1'
+  s.add_development_dependency 'yard',      '~> 0.8.7.3'
+  s.add_development_dependency 'rspec',     '~> 2.14.1'
+  s.add_development_dependency 'pry',       '~> 0.9.12.6'
 
   s.files = Dir.glob('lib/**/*.rb') 
 end
