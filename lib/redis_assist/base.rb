@@ -281,6 +281,11 @@ module RedisAssist
 
     # Transform and write a standard attribute value
     def write_attribute(name, val)
+      if attributes.is_a?(Redis::Future)
+        value = attributes.value 
+        self.attributes = value ? Hash[*self.class.fields.keys.zip(value).flatten] : {}
+      end
+
       attributes[name] = self.class.transform(:to, name, val)
     end
 

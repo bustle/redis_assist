@@ -13,11 +13,11 @@ Gem::Specification.new do |s|
   s.summary     = %q{A framework for Redis backed ruby apps.}
   s.description = %q{A framework for Redis backed ruby apps.}
 
-  s.rubyforge_project         = "redis_assist"
+  s.rubyforge_project = "redis_assist"
 
-  s.add_dependency('redis', "~> 3.1.0")
+  s.add_dependency('redis')
 
-  s.add_development_dependency 'bundler',   '~> 1.5.3'
+  s.add_development_dependency 'bundler',   '~> 1.7.3'
   s.add_development_dependency 'rake',      '~> 10.1.1'
   s.add_development_dependency 'yard',      '~> 0.8.7.3'
   s.add_development_dependency 'rspec',     '~> 2.14.1'
