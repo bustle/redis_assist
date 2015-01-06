@@ -1,5 +1,5 @@
 class IntegerTransform < RedisAssist::Transform
   def self.from(val)
-    val.to_i
+    val ? val.to_i : nil
   end
 end

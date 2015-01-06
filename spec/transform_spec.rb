@@ -48,6 +48,17 @@ describe TestModel do
     its(:parsy)   { should be nil }
   end
 
+  context "integer" do
+    let(:mathy) { nil }
+    let(:model) { TestModel.new(attrs) }
+    before      { model.save }
+    its(:mathy) { should be nil }
+    let(:found) { TestModel.find(model.id) }
+    it "retains nil integer" do
+      found.mathy.should be nil
+    end
+  end
+
   context "time parsing" do
     subject { model }
     let(:new_time) { Time.now }
