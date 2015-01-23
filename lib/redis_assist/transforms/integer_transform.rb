@@ -1,5 +1,8 @@
 class IntegerTransform < RedisAssist::Transform
   def self.from(val)
-    val ? val.to_i : nil
+    return nil if val.eql?('')
+    Integer(val)
+  rescue
+    nil
   end
 end
