@@ -9,6 +9,7 @@ class TestModel < RedisAssist::Base
   attr_persist :mathy,  as: :integer
   attr_persist :parsy,  as: :json
   attr_persist :timing, as: :time
+  attr_persist :zero,   as: :integer
 end
 
 describe TestTransform do

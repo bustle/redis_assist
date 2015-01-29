@@ -81,11 +81,13 @@ module RedisAssist
 
       def transform(direction, attr, val)
         transformer = RedisAssist.transforms[persisted_attrs[attr][:as]]
+        default     = persisted_attrs[attr][:default]
+        value       = val || default
 
         if transformer
-          transformer.transform(direction, val)
+          transformer.transform(direction, value) if transformer
         else
-          val || persisted_attrs[attr][:default]
+          value
         end
       end
 

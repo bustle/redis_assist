@@ -4,13 +4,15 @@ require 'redis_assist'
 class Person < RedisAssist::Base
   attr_persist :first
   attr_persist :last
-  attr_persist :title,            :default => "Runt"
-  attr_persist :birthday,         :as => :time
-  attr_persist :info,             :as => :hash
-  attr_persist :toys,             :as => :list
-  attr_persist :created_at,       :as => :time 
-  attr_persist :deleted_at,       :as => :time 
-  attr_persist :favorite_number,  :as => :integer
+  attr_persist :title,            default: "Runt"
+  attr_persist :birthday,         as: :time
+  attr_persist :info,             as: :hash
+  attr_persist :toys,             as: :list
+  attr_persist :created_at,       as: :time 
+  attr_persist :deleted_at,       as: :time 
+  attr_persist :favorite_number,  as: :integer
+  attr_persist :hundred,          as: :integer, default: 100
+  attr_persist :zero,             as: :integer, default: 0
 
   has_many :cats
 

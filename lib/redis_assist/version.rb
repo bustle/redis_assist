@@ -1,3 +1,3 @@
 module RedisAssist
-  VERSION = '0.10.6' unless defined?(::RedisAssist::VERSION)
+  VERSION = '0.10.7' unless defined?(::RedisAssist::VERSION)
 end

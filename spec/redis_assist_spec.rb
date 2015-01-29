@@ -133,7 +133,7 @@ describe Person do
     end
   end
 
-  context "attribute type conversions" do
+  context "attribute type conversion" do
     before  { person.save }
     subject { Person.find(person.id) }
 
@@ -143,9 +143,16 @@ describe Person do
     its(:info)        { should eq info }
   end
 
-  context "default values are respected" do
-    before { person.save }
-    its(:title)       { should eq "Runt" }
+  context "attribute default value" do
+    before      { person.save }
+    it "retains string default" do
+      subject.title.should  eq "Runt" 
+    end
+
+    it "retains transformed default" do
+      subject.zero.should eq 0
+      subject.hundred.should eq 100
+    end
   end
 
   context "deleting" do
