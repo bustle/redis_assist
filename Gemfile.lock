@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    redis_assist (0.10.5)
+    redis_assist (0.10.6)
       redis
 
 GEM
