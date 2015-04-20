@@ -3,8 +3,7 @@ module RedisAssist
     class << self
       def redis_client
         return @redis_client if @redis_client
-        redis_config      = { :host => '127.0.0.1' } 
-        self.redis_client = Redis.new(redis_config) 
+        self.redis_client = Redis.respond_to?(:current) ? Redis.current : Redis.new
       end
 
       def redis_client=(val)
